@@ -13,10 +13,11 @@ load_dotenv()
 # Access environment variables
 FLASK_APP = os.getenv('FLASK_APP')
 FLASK_ENV = os.getenv('FLASK_ENV')
-DATABASE_URL = os.getenv('DATABASE_URL')
 
+# Update database configuration to use DATABASE_URL from environment variables
+DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///instance/transdev.db')
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///transdev.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SECRET_KEY'] = 'your_secret_key'
 
 with app.app_context():

@@ -1,12 +1,16 @@
 # Ignore Python cache files
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 
 # Ignore database files
 instance/*.db
+*.sqlite3
 
 # Ignore environment files
 .env
+.env.*
 
 # Ignore system files
 .DS_Store
@@ -15,7 +19,31 @@ Thumbs.db
 # Ignore runtime files
 *.log
 *.pid
-*.py[co]
 
 # Ignore virtual environments
 venv/
+ENV/
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Ignore VS Code settings
+.vscode/
+
+# Ignore compiled C extensions
+*.so
+
+# Ignore coverage reports
+htmlcov/
+.coverage
+.coverage.*
+.cache
+
+# Ignore distribution/build files
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Ignore pytest cache
+.pytest_cache/
