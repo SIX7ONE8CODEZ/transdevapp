@@ -14,8 +14,9 @@ load_dotenv()
 FLASK_APP = os.getenv('FLASK_APP')
 FLASK_ENV = os.getenv('FLASK_ENV')
 
-# Update database configuration to use DATABASE_URL from environment variables
-DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///instance/transdev.db')
+# Update database configuration to use an absolute path
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DATABASE_URL = f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'transdev.db')}"
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URL
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -94,10 +95,12 @@ def dashboard():
 @app.route('/schedule', methods=['GET', 'POST'])
 @login_required
 def schedule():
+    print("/schedule route accessed with method:", request.method)
     if current_user.username not in ['admin1', 'admin2', 'admin3']:
         return "Access denied. You do not have permission to edit the schedule.", 403
 
     if request.method == 'POST':
+        print("POST data received at /schedule:", request.form)
         employee_id = request.form.get('employee_id')
         start_time = datetime.fromisoformat(request.form.get('start_time'))
         end_time = datetime.fromisoformat(request.form.get('end_time'))
@@ -186,15 +189,18 @@ def mark_notification_read(notification_id):
 @app.route('/update_students', methods=['POST'])
 @login_required
 def update_students():
+    print("/update_students route accessed with method:", request.method)
     shift_id = request.form.get('shift_id')
     students = request.form.get('students')
 
     shift = Shift.query.get(shift_id)
     if shift:
+        print("Updating students for shift ID:", shift_id)
         shift.students = students
         db.session.commit()
         return redirect(url_for('schedule'))
     else:
+        print("Shift not found for ID:", shift_id)
         return "Shift not found", 404
 
 @app.route('/remove_user/<int:user_id>', methods=['POST'])
@@ -213,14 +219,17 @@ def remove_user(user_id):
 @app.route('/delete_schedule', methods=['POST'])
 @login_required
 def delete_schedule():
+    print("/delete_schedule route accessed with method:", request.method)
     shift_id = request.form.get('shift_id')
 
     shift = Shift.query.get(shift_id)
     if shift:
+        print("Deleting shift ID:", shift_id)
         db.session.delete(shift)
         db.session.commit()
         return redirect(url_for('schedule'))
     else:
+        print("Shift not found for ID:", shift_id)
         return "Shift not found", 404
 
 @app.route('/view_users')
