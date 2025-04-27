@@ -4,6 +4,16 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.security import generate_password_hash, check_password_hash
 from database import db, User, Shift, Notification
 from datetime import datetime
+from dotenv import load_dotenv
+import os
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Access environment variables
+FLASK_APP = os.getenv('FLASK_APP')
+FLASK_ENV = os.getenv('FLASK_ENV')
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///transdev.db'
