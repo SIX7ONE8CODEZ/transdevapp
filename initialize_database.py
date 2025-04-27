@@ -1,5 +1,6 @@
 import os
-from database import db, app
+from app import app
+from database import db
 
 def initialize_database():
     db_path = os.path.join('instance', 'transdev.db')
