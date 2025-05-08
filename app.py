@@ -141,7 +141,7 @@ def view_schedule():
     if current_user.username in ['admin1', 'admin2', 'admin3']:
         user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == User.id).all()
     else:
-        user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == User.id).filter(Shift.employee_id == current_user.id).all()
+        user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == current_user.id).all()
 
     shifts_with_employee = [
         {
@@ -149,8 +149,11 @@ def view_schedule():
             'start_time': shift.start_time,
             'end_time': shift.end_time,
             'status': shift.status,
-            'employee_name': user.username,
-            'students': shift.students,
+            'employee_name': user.username,  # Keeping this key for backward compatibility
+            'trainer_name': user.username,   # Adding this new key
+            'students': shift.students,      # Keeping this key for backward compatibility
+            'participants': shift.students,  # Adding this new key
+            'id': shift.id                   # Adding ID for form submission
         }
         for shift, user in user_shifts
     ]
@@ -183,6 +186,16 @@ def mark_notification_read(notification_id):
     notification = Notification.query.filter_by(id=notification_id, user_id=current_user.id).first()
     if notification:
         notification.is_read = True
+        db.session.commit()
+        return jsonify({'success': True}), 200
+    return jsonify({'error': 'Notification not found'}), 404
+
+@app.route('/notifications/delete/<int:notification_id>', methods=['POST'])
+@login_required
+def delete_notification(notification_id):
+    notification = Notification.query.filter_by(id=notification_id, user_id=current_user.id).first()
+    if notification:
+        db.session.delete(notification)
         db.session.commit()
         return jsonify({'success': True}), 200
     return jsonify({'error': 'Notification not found'}), 404

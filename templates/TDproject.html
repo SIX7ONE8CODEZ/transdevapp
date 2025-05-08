@@ -68,8 +68,8 @@
             <td>
                 <form method="POST" action="/schedule">
                     <input type="hidden" name="shift_id" value="{{ shift.id }}">
-                    <input type="datetime-local" name="start_time" value="{{ shift.start_time }}">
-                    <input type="datetime-local" name="end_time" value="{{ shift.end_time }}">
+                    <input type="datetime-local" name="start_time" value="{{ shift.start_time }}" title="Start Time" placeholder="Enter start time">
+                    <input type="datetime-local" name="end_time" value="{{ shift.end_time }}" title="End Time" placeholder="Enter end time">
                     <label for="assignment">Assignment:</label>
                     <input type="text" id="assignment" name="assignment" value="{{ shift.assignment }}" required>
                     <button type="submit">Update</button>
@@ -85,7 +85,7 @@
             <td>
                 <form method="POST" action="/delete_schedule">
                     <input type="hidden" name="shift_id" value="{{ shift.id }}">
-                    <button type="submit" style="background-color: red; color: white;">Delete</button>
+                    <button type="submit" class="delete-button">Delete</button>
                 </form>
             </td>
         </tr>

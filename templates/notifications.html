@@ -25,16 +25,50 @@
         tr:hover {
             background-color: #f1f1f1;
         }
+        .checkbox-cell {
+            width: 40px;
+            text-align: center;
+        }
+        .notification-checkbox {
+            transform: scale(1.5);
+            cursor: pointer;
+        }
+        .delete-btn {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .delete-btn:hover {
+            background-color: #ff0000;
+        }
+        .action-cell {
+            width: 80px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <h1>Notifications</h1>
     <table>
         <tr>
+            <th class="checkbox-cell">Mark as Read</th>
+            <th class="action-cell">Delete</th>
             <th>Message</th>
         </tr>
-        {% for notification in current_user.notifications %}
+        {% for notification in notifications %}
         <tr id="notification-{{ notification.id }}">
+            <td class="checkbox-cell">
+                <input type="checkbox" class="notification-checkbox" 
+                       data-notification-id="{{ notification.id }}"
+                       {% if notification.is_read %}checked disabled{% endif %}>
+            </td>
+            <td class="action-cell">
+                <button class="delete-btn" data-notification-id="{{ notification.id }}">Delete</button>
+            </td>
             <td>{{ notification.message }}</td>
         </tr>
         {% endfor %}
@@ -42,6 +76,28 @@
     <a href="/dashboard">Back to Dashboard</a>
 
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Setup checkbox event handlers
+            const checkboxes = document.querySelectorAll('.notification-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        const notificationId = this.getAttribute('data-notification-id');
+                        markAsRead(notificationId);
+                    }
+                });
+            });
+            
+            // Setup delete button event handlers
+            const deleteButtons = document.querySelectorAll('.delete-btn');
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const notificationId = this.getAttribute('data-notification-id');
+                    deleteNotification(notificationId);
+                });
+            });
+        });
+
         function markAsRead(notificationId) {
             fetch(`/notifications/mark_read/${notificationId}`, {
                 method: 'POST',
@@ -52,20 +108,55 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    document.getElementById(`notification-${notificationId}`).remove();
+                    // Add a fade-out effect before removing
+                    const row = document.getElementById(`notification-${notificationId}`);
+                    row.style.transition = "opacity 0.5s";
+                    row.style.opacity = 0;
+                    
+                    // Remove the row after fade effect
+                    setTimeout(() => {
+                        row.remove();
+                    }, 500);
                 } else {
                     alert('Failed to mark notification as read.');
                 }
+            })
+            .catch(error => {
+                console.error('Error marking notification as read:', error);
+                alert('An error occurred while marking the notification as read.');
             });
         }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            const notificationRows = document.querySelectorAll('tr[id^="notification-"]');
-            notificationRows.forEach(row => {
-                const notificationId = row.id.split('-')[1];
-                markAsRead(notificationId);
-            });
-        });
+        
+        function deleteNotification(notificationId) {
+            if (confirm('Are you sure you want to delete this notification?')) {
+                fetch(`/notifications/delete/${notificationId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Add a fade-out effect before removing
+                        const row = document.getElementById(`notification-${notificationId}`);
+                        row.style.transition = "opacity 0.5s";
+                        row.style.opacity = 0;
+                        
+                        // Remove the row after fade effect
+                        setTimeout(() => {
+                            row.remove();
+                        }, 500);
+                    } else {
+                        alert('Failed to delete notification.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting notification:', error);
+                    alert('An error occurred while deleting the notification.');
+                });
+            }
+        }
     </script>
 
     <footer class="footer">

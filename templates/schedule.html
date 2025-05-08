@@ -11,7 +11,7 @@
 
     <h2>Add New Shift</h2>
     <form method="POST" action="/schedule">
-        <label for="employee_id">Employee:</label>
+        <label for="employee_id">Trainer:</label>
         <select id="employee_id" name="employee_id" required>
             {% for employee in employees %}
             <option value="{{ employee.id }}">{{ employee.username }}</option>
@@ -27,8 +27,8 @@
         <label for="end_time">End Time:</label>
         <input type="datetime-local" id="end_time" name="end_time" required>
         <br>
-        <label for="students">Students:</label>
-        <input type="text" id="students" name="students" placeholder="Enter student names">
+        <label for="students">Participants:</label>
+        <input type="text" id="students" name="students" placeholder="Enter participant names">
         <br>
         <button type="submit">Add Shift</button>
     </form>
@@ -36,7 +36,7 @@
     <h2>Existing Shifts</h2>
     <table>
         <tr>
-            <th>Employee</th>
+            <th>Trainer</th>
             <th>Assignment</th>
             <th>Start Time</th>
             <th>End Time</th>
@@ -46,8 +46,8 @@
         <tr>
             <td>{{ shift.employee.username }}</td>
             <td>{{ shift.assignment }}</td>
-            <td>{{ shift.start_time }}</td>
-            <td>{{ shift.end_time }}</td>
+            <td>{{ shift.start_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
+            <td>{{ shift.end_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
             <td>{{ shift.status }}</td>
         </tr>
         {% endfor %}
@@ -55,7 +55,7 @@
 
     <table>
         <tr>
-            <th>Employee</th>
+            <th>Trainer</th>
             <th>Start Time</th>
             <th>End Time</th>
             <th>Actions</th>
@@ -63,8 +63,8 @@
         {% for shift in shifts %}
         <tr>
             <td>{{ shift.employee.username }}</td>
-            <td>{{ shift.start_time }}</td>
-            <td>{{ shift.end_time }}</td>
+            <td>{{ shift.start_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
+            <td>{{ shift.end_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
             <td>
                 <form method="POST" action="/schedule">
                     <input type="hidden" name="shift_id" value="{{ shift.id }}">
@@ -78,8 +78,8 @@
             <td>
                 <form method="POST" action="/update_students">
                     <input type="hidden" name="shift_id" value="{{ shift.id }}">
-                    <input type="text" name="students" value="{{ shift.students }}" placeholder="Enter student names">
-                    <button type="submit">Add Students</button>
+                    <input type="text" name="students" value="{{ shift.students }}" placeholder="Enter participant names">
+                    <button type="submit">Add Participants</button>
                 </form>
             </td>
             <td>
