@@ -66,12 +66,12 @@
             <td>{{ shift.start_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
             <td>{{ shift.end_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
             <td>
-                <form method="POST" action="/schedule">
+                <form method="POST" action="/update_schedule">
                     <input type="hidden" name="shift_id" value="{{ shift.id }}">
-                    <input type="datetime-local" name="start_time" value="{{ shift.start_time }}">
-                    <input type="datetime-local" name="end_time" value="{{ shift.end_time }}">
-                    <label for="assignment">Assignment:</label>
-                    <input type="text" id="assignment" name="assignment" value="{{ shift.assignment }}" required>
+                    <input type="datetime-local" name="start_time" value="{{ shift.start_time.strftime('%Y-%m-%dT%H:%M') }}">
+                    <input type="datetime-local" name="end_time" value="{{ shift.end_time.strftime('%Y-%m-%dT%H:%M') }}">
+                    <label for="assignment_{{ shift.id }}">Assignment:</label>
+                    <input type="text" id="assignment_{{ shift.id }}" name="assignment" value="{{ shift.assignment }}" required>
                     <button type="submit">Update</button>
                 </form>
             </td>
