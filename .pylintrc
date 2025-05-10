@@ -1,0 +1,25 @@
+[MASTER]
+disable=
+    duplicate-code,
+    invalid-name,
+    missing-function-docstring,
+    missing-module-docstring,
+    missing-class-docstring,
+    line-too-long,
+    too-many-arguments,
+    broad-except,
+    import-error
+
+[TYPECHECK]
+ignore-mixin-members=yes
+generated-members=request.*,req.*,objects,DoesNotExist,id,pk,query
+
+[FORMAT]
+max-line-length=120
+
+[DESIGN]
+max-args=8
+max-attributes=12
+max-locals=15
+min-public-methods=0
+max-public-methods=25
