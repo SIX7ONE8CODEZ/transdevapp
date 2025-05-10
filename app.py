@@ -261,6 +261,64 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+@app.route('/update_schedule', methods=['POST'])
+@login_required
+def update_schedule():
+    print("Update schedule route hit!")
+    # Get form data    
+    shift_id = request.form.get('shift_id')
+    print(f"Processing update for shift_id: {shift_id}")
+    
+    # Get assignment data
+    new_assignment = request.form.get('assignment')
+    print(f"New assignment value: {new_assignment}")
+    
+    shift = Shift.query.get(shift_id)
+    
+    if shift:
+        print(f"Original assignment: {shift.assignment}")
+        
+        # Update assignment field - directly set it
+        if new_assignment is not None:
+            shift.assignment = new_assignment
+            print(f"Assignment updated to: {shift.assignment}")
+        
+        # Process start time
+        new_start_time = request.form.get('start_time')
+        if new_start_time and new_start_time.strip():
+            try:
+                start_time = datetime.strptime(new_start_time, '%Y-%m-%dT%H:%M')
+                shift.start_time = start_time
+            except (ValueError, TypeError) as e:
+                print(f"Error parsing start_time: {e}")
+        
+        # Process end time
+        new_end_time = request.form.get('end_time')
+        if new_end_time and new_end_time.strip():
+            try:
+                end_time = datetime.strptime(new_end_time, '%Y-%m-%dT%H:%M')
+                shift.end_time = end_time
+            except (ValueError, TypeError) as e:
+                print(f"Error parsing end_time: {e}")
+        
+        # Explicitly commit the changes
+        db.session.commit()
+        print("Database changes committed")
+        
+        # Notify all users about the update
+        users = User.query.all()
+        for user in users:
+            notification = Notification(
+                message=f"Schedule updated: {shift.assignment} from {shift.start_time.strftime('%m/%d/%Y %I:%M %p')} to {shift.end_time.strftime('%m/%d/%Y %I:%M %p')}",
+                user_id=user.id
+            )
+            db.session.add(notification)
+        db.session.commit()
+    else:
+        print(f"Shift with ID {shift_id} not found")
+    
+    return redirect(url_for('schedule'))
+
 if __name__ == '__main__':
     app.run(debug=True)
 
