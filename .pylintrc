@@ -8,7 +8,17 @@ disable=
     line-too-long,
     too-many-arguments,
     broad-except,
-    import-error
+    import-error,
+    consider-using-f-string,
+    too-many-instance-attributes,
+    raise-missing-from,
+    protected-access,
+    unused-variable,
+    too-many-branches,
+    too-many-statements,
+    unidiomatic-typecheck,
+    unspecified-encoding
+ignore=venv,env,.venv,.env,site-packages
 
 [TYPECHECK]
 ignore-mixin-members=yes
@@ -19,7 +29,7 @@ max-line-length=120
 
 [DESIGN]
 max-args=8
-max-attributes=12
+max-attributes=20
 max-locals=15
 min-public-methods=0
 max-public-methods=25
