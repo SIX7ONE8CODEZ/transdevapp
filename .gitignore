@@ -2,7 +2,14 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyc
+*.pyo
+*.pyd
+
+# Compiled C extensions
 *.so
+
+# Distribution/build files
 .Python
 build/
 develop-eggs/
@@ -34,13 +41,32 @@ instance/
 *.db
 *.sqlite
 *.sqlite3
+instance/*.db
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-.DS_Store
 
-# Logs
+# System files
+.DS_Store
+Thumbs.db
+
+# Logs and runtime files
 *.log
+*.pid
+
+# Environment files
+.env
+.env.*
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Testing and Coverage
+htmlcov/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/

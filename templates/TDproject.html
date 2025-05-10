@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schedule</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>Schedule</h1>
+
+    <h2>Add New Shift</h2>
+    <form method="POST" action="/schedule">
+        <label for="employee_id">Employee:</label>
+        <select id="employee_id" name="employee_id" required>
+            {% for employee in employees %}
+            <option value="{{ employee.id }}">{{ employee.username }}</option>
+            {% endfor %}
+        </select>
+        <br>
+        <label for="assignment">Assignment:</label>
+        <input type="text" id="assignment" name="assignment" required>
+        <br>
+        <label for="start_time">Start Time:</label>
+        <input type="datetime-local" id="start_time" name="start_time" required>
+        <br>
+        <label for="end_time">End Time:</label>
+        <input type="datetime-local" id="end_time" name="end_time" required>
+        <br>
+        <label for="students">Students:</label>
+        <input type="text" id="students" name="students" placeholder="Enter student names">
+        <br>
+        <button type="submit">Add Shift</button>
+    </form>
+
+    <h2>Existing Shifts</h2>
+    <table>
+        <tr>
+            <th>Employee</th>
+            <th>Assignment</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Status</th>
+        </tr>
+        {% for shift in shifts %}
+        <tr>
+            <td>{{ shift.employee.username }}</td>
+            <td>{{ shift.assignment }}</td>
+            <td>{{ shift.start_time }}</td>
+            <td>{{ shift.end_time }}</td>
+            <td>{{ shift.status }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <table>
+        <tr>
+            <th>Employee</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th>Actions</th>
+        </tr>
+        {% for shift in shifts %}
+        <tr>
+            <td>{{ shift.employee.username }}</td>
+            <td>{{ shift.start_time }}</td>
+            <td>{{ shift.end_time }}</td>
+            <td>
+                <form method="POST" action="/schedule">
+                    <input type="hidden" name="shift_id" value="{{ shift.id }}">
+                    <input type="datetime-local" name="start_time" value="{{ shift.start_time }}" title="Start Time" placeholder="Enter start time">
+                    <input type="datetime-local" name="end_time" value="{{ shift.end_time }}" title="End Time" placeholder="Enter end time">
+                    <label for="assignment">Assignment:</label>
+                    <input type="text" id="assignment" name="assignment" value="{{ shift.assignment }}" required>
+                    <button type="submit">Update</button>
+                </form>
+            </td>
+            <td>
+                <form method="POST" action="/update_students">
+                    <input type="hidden" name="shift_id" value="{{ shift.id }}">
+                    <input type="text" name="students" value="{{ shift.students }}" placeholder="Enter student names">
+                    <button type="submit">Add Students</button>
+                </form>
+            </td>
+            <td>
+                <form method="POST" action="/delete_schedule">
+                    <input type="hidden" name="shift_id" value="{{ shift.id }}">
+                    <button type="submit" class="delete-button">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="/dashboard">Back to Dashboard</a>
+
+    <footer class="footer">
+        <p>&copy; SIX7ONE8 CODEZ 2025</p>
+    </footer>
+</body>
+</html>

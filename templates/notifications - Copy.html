@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body>
+    <h1>Notifications</h1>
+    <table>
+        <tr>
+            <th>Message</th>
+        </tr>
+        {% for notification in current_user.notifications %}
+        <tr id="notification-{{ notification.id }}">
+            <td>{{ notification.message }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <a href="/dashboard">Back to Dashboard</a>
+
+    <script>
+        function markAsRead(notificationId) {
+            fetch(`/notifications/mark_read/${notificationId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById(`notification-${notificationId}`).remove();
+                } else {
+                    alert('Failed to mark notification as read.');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const notificationRows = document.querySelectorAll('tr[id^="notification-"]');
+            notificationRows.forEach(row => {
+                const notificationId = row.id.split('-')[1];
+                markAsRead(notificationId);
+            });
+        });
+    </script>
+
+    <footer class="footer">
+        <p>&copy; SIX7ONE8 CODEZ 2025</p>
+    </footer>
+</body>
+</html>

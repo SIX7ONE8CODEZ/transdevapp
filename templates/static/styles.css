@@ -1,0 +1,42 @@
+body {
+    background-color: red;
+    color: black;
+    font-family: Arial, sans-serif;
+    font-weight: bold;
+}
+
+h1 {
+    color: white;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+}
+
+th, td {
+    border: 1px solid black;
+    padding: 10px;
+    text-align: center;
+    color: black;
+}
+
+th {
+    background-color: red;
+    color: white;
+}
+
+button {
+    background-color: white;
+    color: black;
+    padding: 8px 15px;
+    border: 2px solid black;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button:hover {
+    background-color: darkred;
+    color: white;
+}
