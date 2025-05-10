@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        body {
+            background-color: white;
+            font-family: Arial, sans-serif;
+        }
+        a {
+            color: blue;
+            font-size: 18px;
+            text-decoration: underline;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .content-section {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Welcome, {{ current_user.username }}!</h1>
+    <nav>
+        <ul>
+            {% if current_user.username in ['admin1', 'admin2', 'admin3'] %}
+            <li><a href="/schedule">Edit Schedule</a></li>
+            <li><a href="/view_users">View All Users</a></li>
+            {% endif %}
+            <li><a href="/view_schedule">View Schedule</a></li>
+            <li><a href="/notifications">Notifications
+                {% if current_user.notifications|selectattr('is_read', 'equalto', False)|list %}
+                <span style="color: red; font-weight: bold;">(New)</span>
+                {% endif %}
+            </a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    </nav>
+    
+    <div class="content-section">
+        <h2>Your Shifts</h2>
+        <table>
+            <tr>
+                <th>Assignment</th>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th>Status</th>
+            </tr>
+            {% for shift in current_user.shifts %}
+            <tr>
+                <td>{{ shift.assignment }}</td>
+                <td>{{ shift.start_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                <td>{{ shift.end_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                <td>{{ shift.status }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    {% if current_user.username in ['admin1', 'admin2', 'admin3'] %}
+    <div class="content-section">
+        <h2>Manage Users</h2>
+        <table>
+            <tr>
+                <th>Username</th>
+                <th>Action</th>
+            </tr>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.username }}</td>
+                <td>
+                    <form action="/remove_user/{{ user.id }}" method="POST" style="display:inline;">
+                        <button type="submit">Remove</button>
+                    </form>
+                </td>
+                {% if current_user.username == 'admin3' %}
+                <td>
+                    <form method="POST" action="/remove_user/{{ user.id }}">
+                        <button type="submit" style="background-color: red; color: white;">Delete</button>
+                    </form>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
+
+    <footer class="footer">
+        <p>&copy; SIX7ONE8 CODEZ 2025</p>
+    </footer>
+</body>
+</html>
