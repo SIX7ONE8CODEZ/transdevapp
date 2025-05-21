@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 from flask import Flask, render_template, redirect, url_for, request, jsonify, send_from_directory
+=======
+from flask import Flask, render_template, redirect, url_for, request, jsonify
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -6,12 +10,16 @@ from database import db, User, Shift, Notification
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+<<<<<<< HEAD
 import io
 from flask_mail import Mail
 import pandas as pd  # For Excel handling
 from werkzeug.utils import secure_filename  # For secure file handling
 import json  # For JSON handling in spreadsheet
 import io  # For handling BytesIO objects
+=======
+from flask_mail import Mail
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 
 # Load environment variables from .env file
 load_dotenv()
@@ -94,8 +102,12 @@ def register():
 @login_required
 def dashboard():
     print(f"Accessing dashboard for user: {current_user.username}")
+<<<<<<< HEAD
     # Get shifts sorted by start_time
     user_shifts = Shift.query.filter_by(employee_id=current_user.id).order_by(Shift.start_time).all()
+=======
+    user_shifts = Shift.query.filter_by(employee_id=current_user.id).all()
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
     print(f"Shifts retrieved for user {current_user.username}: {user_shifts}")
     return render_template('dashboard.html', shifts=user_shifts)
 
@@ -137,8 +149,12 @@ def schedule():
 
         return redirect(url_for('schedule'))
 
+<<<<<<< HEAD
     # Get shifts sorted by start_time
     shifts = Shift.query.order_by(Shift.start_time).all()
+=======
+    shifts = Shift.query.all()
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
     employees = User.query.all()
     return render_template('schedule.html', shifts=shifts, employees=employees)
 
@@ -146,11 +162,17 @@ def schedule():
 @login_required
 def view_schedule():
     if current_user.username in ['admin1', 'admin2', 'admin3']:
+<<<<<<< HEAD
         # Sort by start_time for admin users who can see all shifts
         user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == User.id).order_by(Shift.start_time).all()
     else:
         # Sort by start_time for regular users who see only their shifts
         user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == current_user.id).order_by(Shift.start_time).all()
+=======
+        user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == User.id).all()
+    else:
+        user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == current_user.id).all()
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 
     shifts_with_employee = [
         {
@@ -166,6 +188,7 @@ def view_schedule():
         }
         for shift, user in user_shifts
     ]
+<<<<<<< HEAD
     # Get flash messages if any
     import_message = request.args.get('import_message')
     import_error = request.args.get('import_error', False) == 'True'
@@ -267,6 +290,9 @@ def import_schedule():
     except Exception as e:
         # Return error message
         return redirect(url_for('view_schedule', import_message=f'Error processing file: {str(e)}', import_error=True))
+=======
+    return render_template('view_schedule.html', shifts=shifts_with_employee)
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 
 @app.route('/api/schedule')
 @login_required
@@ -283,6 +309,7 @@ def api_schedule():
     ]
     return jsonify(events)
 
+<<<<<<< HEAD
 @app.route('/download_template')
 @login_required
 def download_template():
@@ -293,6 +320,8 @@ def download_template():
     # Return the template file
     return send_from_directory(os.path.join(app.root_path, 'static'), 'schedule_template.xlsx')
 
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 @app.route('/notifications')
 @login_required
 def notifications():
@@ -319,6 +348,7 @@ def delete_notification(notification_id):
         return jsonify({'success': True}), 200
     return jsonify({'error': 'Notification not found'}), 404
 
+<<<<<<< HEAD
 @app.route('/notifications/mark_multiple_read', methods=['POST'])
 @login_required
 def mark_multiple_read():
@@ -375,6 +405,8 @@ def delete_multiple_notifications():
     db.session.commit()
     return jsonify({'success': True, 'count': deleted_count}), 200
 
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 @app.route('/update_students', methods=['POST'])
 @login_required
 def update_students():
@@ -431,10 +463,15 @@ def view_users():
     return render_template('view_users.html', users=users)
 
 @app.route('/logout')
+<<<<<<< HEAD
+=======
+@login_required
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 def logout():
     logout_user()
     return redirect(url_for('login'))
 
+<<<<<<< HEAD
 # Helper function to parse datetime from various formats
 def parse_datetime(datetime_str):
     if not datetime_str:
@@ -484,6 +521,8 @@ def calculate_duration(start_time, end_time):
         
     return end_time - start_time
 
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 @app.route('/update_schedule', methods=['POST'])
 @login_required
 def update_schedule():
@@ -500,10 +539,13 @@ def update_schedule():
     
     if shift:
         print(f"Original assignment: {shift.assignment}")
+<<<<<<< HEAD
         # Store original times for comparison
         original_start_time = shift.start_time
         original_end_time = shift.end_time
         original_duration = original_end_time - original_start_time
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
         
         # Update assignment field - directly set it
         if new_assignment is not None:
@@ -512,22 +554,32 @@ def update_schedule():
         
         # Process start time
         new_start_time = request.form.get('start_time')
+<<<<<<< HEAD
         start_time_updated = False
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
         if new_start_time and new_start_time.strip():
             try:
                 start_time = datetime.strptime(new_start_time, '%Y-%m-%dT%H:%M')
                 shift.start_time = start_time
+<<<<<<< HEAD
                 start_time_updated = True
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
             except (ValueError, TypeError) as e:
                 print(f"Error parsing start_time: {e}")
         
         # Process end time
         new_end_time = request.form.get('end_time')
+<<<<<<< HEAD
         end_time_updated = False
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
         if new_end_time and new_end_time.strip():
             try:
                 end_time = datetime.strptime(new_end_time, '%Y-%m-%dT%H:%M')
                 shift.end_time = end_time
+<<<<<<< HEAD
                 end_time_updated = True
             except (ValueError, TypeError) as e:
                 print(f"Error parsing end_time: {e}")
@@ -545,6 +597,11 @@ def update_schedule():
             shift.end_time = shift.start_time + timedelta(hours=1)
             print("Corrected end_time to be 1 hour after start_time")
         
+=======
+            except (ValueError, TypeError) as e:
+                print(f"Error parsing end_time: {e}")
+        
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
         # Explicitly commit the changes
         db.session.commit()
         print("Database changes committed")
@@ -563,6 +620,7 @@ def update_schedule():
     
     return redirect(url_for('schedule'))
 
+<<<<<<< HEAD
 @app.route('/spreadsheet_schedule')
 @login_required
 def spreadsheet_schedule():
@@ -914,6 +972,8 @@ def import_spreadsheet():
                               message=f'Error importing schedule: {str(e)}',
                               message_type='error'))
 
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 if __name__ == '__main__':
     app.run(debug=True)
 
