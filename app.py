@@ -551,9 +551,6 @@ def update_schedule():
             shift.end_time = shift.start_time + timedelta(hours=1)
             print("Corrected end_time to be 1 hour after start_time")
         
-            except (ValueError, TypeError) as e:
-                print(f"Error parsing end_time: {e}")
-        
         # Explicitly commit the changes
         db.session.commit()
         print("Database changes committed")
