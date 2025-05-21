@@ -155,9 +155,6 @@ def view_schedule():
     else:
         # Sort by start_time for regular users who see only their shifts
         user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == current_user.id).order_by(Shift.start_time).all()
-        user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == User.id).all()
-    else:
-        user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == current_user.id).all()
 
     shifts_with_employee = [
         {
