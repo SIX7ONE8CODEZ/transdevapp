@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, jsonify
+from flask import Flask, render_template, redirect, url_for, request, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -6,7 +6,12 @@ from database import db, User, Shift, Notification
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+import io
 from flask_mail import Mail
+import pandas as pd  # For Excel handling
+from werkzeug.utils import secure_filename  # For secure file handling
+import json  # For JSON handling in spreadsheet
+import io  # For handling BytesIO objects
 
 # Load environment variables from .env file
 load_dotenv()
@@ -89,7 +94,8 @@ def register():
 @login_required
 def dashboard():
     print(f"Accessing dashboard for user: {current_user.username}")
-    user_shifts = Shift.query.filter_by(employee_id=current_user.id).all()
+    # Get shifts sorted by start_time
+    user_shifts = Shift.query.filter_by(employee_id=current_user.id).order_by(Shift.start_time).all()
     print(f"Shifts retrieved for user {current_user.username}: {user_shifts}")
     return render_template('dashboard.html', shifts=user_shifts)
 
@@ -131,7 +137,8 @@ def schedule():
 
         return redirect(url_for('schedule'))
 
-    shifts = Shift.query.all()
+    # Get shifts sorted by start_time
+    shifts = Shift.query.order_by(Shift.start_time).all()
     employees = User.query.all()
     return render_template('schedule.html', shifts=shifts, employees=employees)
 
@@ -139,9 +146,11 @@ def schedule():
 @login_required
 def view_schedule():
     if current_user.username in ['admin1', 'admin2', 'admin3']:
-        user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == User.id).all()
+        # Sort by start_time for admin users who can see all shifts
+        user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == User.id).order_by(Shift.start_time).all()
     else:
-        user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == current_user.id).all()
+        # Sort by start_time for regular users who see only their shifts
+        user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == current_user.id).order_by(Shift.start_time).all()
 
     shifts_with_employee = [
         {
@@ -157,7 +166,107 @@ def view_schedule():
         }
         for shift, user in user_shifts
     ]
-    return render_template('view_schedule.html', shifts=shifts_with_employee)
+    # Get flash messages if any
+    import_message = request.args.get('import_message')
+    import_error = request.args.get('import_error', False) == 'True'
+    
+    return render_template('view_schedule.html', shifts=shifts_with_employee, 
+                           import_message=import_message, import_error=import_error)
+
+@app.route('/import_schedule', methods=['POST'])
+@login_required
+def import_schedule():
+    # Check if user is admin
+    if current_user.username not in ['admin1', 'admin2', 'admin3']:
+        return redirect(url_for('view_schedule', import_message='Access denied. Admin privileges required.', import_error=True))
+    
+    # Check if file was submitted
+    if 'excel_file' not in request.files:
+        return redirect(url_for('view_schedule', import_message='No file uploaded.', import_error=True))
+    
+    file = request.files['excel_file']
+    
+    # Check if file is empty
+    if file.filename == '':
+        return redirect(url_for('view_schedule', import_message='No file selected.', import_error=True))
+    
+    # Check if file is an Excel file
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        return redirect(url_for('view_schedule', import_message='Invalid file format. Please upload an Excel file (.xlsx or .xls).', import_error=True))
+    
+    try:
+        # Process Excel file
+        import pandas as pd
+        from datetime import datetime
+        
+        # Read Excel data
+        df = pd.read_excel(file)
+        
+        # Validate required columns
+        required_columns = ['employee_id', 'assignment', 'start_time', 'end_time', 'status', 'students']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        
+        if missing_columns:
+            return redirect(url_for('view_schedule', 
+                                    import_message=f'Missing required columns: {", ".join(missing_columns)}. Please check your Excel file.', 
+                                    import_error=True))
+        
+        # Keep track of success and errors
+        success_count = 0
+        error_count = 0
+        
+        # Process each row
+        for index, row in df.iterrows():
+            try:
+                # Get employee by ID or create a placeholder
+                employee_id = int(row['employee_id'])
+                employee = User.query.get(employee_id)
+                
+                if not employee:
+                    # Skip this row if employee doesn't exist
+                    error_count += 1
+                    continue
+                
+                # Parse dates
+                start_time = pd.to_datetime(row['start_time'])
+                end_time = pd.to_datetime(row['end_time'])
+                
+                # Get other fields
+                assignment = str(row['assignment'])
+                status = str(row['status'])
+                students = str(row['students']) if not pd.isna(row['students']) else None
+                
+                # Create new shift
+                new_shift = Shift(
+                    employee_id=employee_id,
+                    start_time=start_time,
+                    end_time=end_time,
+                    status=status,
+                    assignment=assignment,
+                    students=students
+                )
+                
+                db.session.add(new_shift)
+                success_count += 1
+                
+            except Exception as e:
+                # Just count the error and continue with next row
+                error_count += 1
+                continue
+        
+        # Commit changes to database
+        db.session.commit()
+        
+        # Return success message with counts
+        message = f'Import completed. {success_count} shifts added successfully.'
+        if error_count > 0:
+            message += f' {error_count} shifts could not be imported due to errors.'
+        
+        return redirect(url_for('view_schedule', import_message=message, import_error=(error_count > 0)))
+        
+    except Exception as e:
+        # Return error message
+        return redirect(url_for('view_schedule', import_message=f'Error processing file: {str(e)}', import_error=True))
 
 @app.route('/api/schedule')
 @login_required
@@ -173,6 +282,16 @@ def api_schedule():
         for shift in user_shifts
     ]
     return jsonify(events)
+
+@app.route('/download_template')
+@login_required
+def download_template():
+    # Only admins can download the template
+    if current_user.username not in ['admin1', 'admin2', 'admin3']:
+        return redirect(url_for('view_schedule', import_message='Access denied. Admin privileges required.', import_error=True))
+    
+    # Return the template file
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'schedule_template.xlsx')
 
 @app.route('/notifications')
 @login_required
@@ -199,6 +318,62 @@ def delete_notification(notification_id):
         db.session.commit()
         return jsonify({'success': True}), 200
     return jsonify({'error': 'Notification not found'}), 404
+
+@app.route('/notifications/mark_multiple_read', methods=['POST'])
+@login_required
+def mark_multiple_read():
+    data = request.json
+    notification_ids = data.get('ids', [])
+    
+    if not notification_ids:
+        return jsonify({'error': 'No notification IDs provided'}), 400
+    
+    # Find all notifications that belong to the current user
+    notifications = Notification.query.filter(
+        Notification.id.in_(notification_ids),
+        Notification.user_id == current_user.id
+    ).all()
+    
+    # Mark all found notifications as read
+    for notification in notifications:
+        notification.is_read = True
+    
+    db.session.commit()
+    return jsonify({'success': True, 'count': len(notifications)}), 200
+
+@app.route('/notifications/mark_all_read', methods=['POST'])
+@login_required
+def mark_all_read():
+    # Find all unread notifications for the current user
+    notifications = Notification.query.filter_by(
+        user_id=current_user.id,
+        is_read=False
+    ).all()
+    
+    # Mark all as read
+    for notification in notifications:
+        notification.is_read = True
+    
+    db.session.commit()
+    return jsonify({'success': True, 'count': len(notifications)}), 200
+
+@app.route('/notifications/delete_multiple', methods=['POST'])
+@login_required
+def delete_multiple_notifications():
+    data = request.json
+    notification_ids = data.get('ids', [])
+    
+    if not notification_ids:
+        return jsonify({'error': 'No notification IDs provided'}), 400
+    
+    # Find all notifications that belong to the current user
+    deleted_count = Notification.query.filter(
+        Notification.id.in_(notification_ids),
+        Notification.user_id == current_user.id
+    ).delete(synchronize_session=False)
+    
+    db.session.commit()
+    return jsonify({'success': True, 'count': deleted_count}), 200
 
 @app.route('/update_students', methods=['POST'])
 @login_required
@@ -256,10 +431,58 @@ def view_users():
     return render_template('view_users.html', users=users)
 
 @app.route('/logout')
-@login_required
 def logout():
     logout_user()
     return redirect(url_for('login'))
+
+# Helper function to parse datetime from various formats
+def parse_datetime(datetime_str):
+    if not datetime_str:
+        return None
+        
+    if not isinstance(datetime_str, str):
+        return datetime_str  # Already a datetime object
+        
+    # Try different date formats
+    formats = [
+        # ISO format
+        lambda s: datetime.fromisoformat(s.replace('Z', '+00:00')),
+        # US format with AM/PM
+        lambda s: datetime.strptime(s, '%m/%d/%Y %I:%M %p'),
+        # 24-hour format
+        lambda s: datetime.strptime(s, '%m/%d/%Y %H:%M'),
+        # Date only
+        lambda s: datetime.strptime(s, '%m/%d/%Y'),
+        # ISO format without timezone
+        lambda s: datetime.fromisoformat(s),
+        # Another common US format
+        lambda s: datetime.strptime(s, '%m/%d/%Y %I:%M:%S %p'),
+        # Try EU format
+        lambda s: datetime.strptime(s, '%d/%m/%Y %H:%M'),
+    ]
+    
+    for format_func in formats:
+        try:
+            return format_func(datetime_str)
+        except (ValueError, TypeError):
+            continue
+            
+    print(f"Failed to parse datetime: {datetime_str}")
+    return None  # Failed to parse
+
+# Calculate duration between two datetime objects, handling edge cases
+def calculate_duration(start_time, end_time):
+    if not start_time or not end_time:
+        # Default to 1 hour if either time is missing
+        from datetime import timedelta
+        return timedelta(hours=1)
+    
+    # Make sure end time is after start time
+    if end_time <= start_time:
+        from datetime import timedelta
+        return timedelta(hours=1)
+        
+    return end_time - start_time
 
 @app.route('/update_schedule', methods=['POST'])
 @login_required
@@ -277,6 +500,10 @@ def update_schedule():
     
     if shift:
         print(f"Original assignment: {shift.assignment}")
+        # Store original times for comparison
+        original_start_time = shift.start_time
+        original_end_time = shift.end_time
+        original_duration = original_end_time - original_start_time
         
         # Update assignment field - directly set it
         if new_assignment is not None:
@@ -285,21 +512,38 @@ def update_schedule():
         
         # Process start time
         new_start_time = request.form.get('start_time')
+        start_time_updated = False
         if new_start_time and new_start_time.strip():
             try:
                 start_time = datetime.strptime(new_start_time, '%Y-%m-%dT%H:%M')
                 shift.start_time = start_time
+                start_time_updated = True
             except (ValueError, TypeError) as e:
                 print(f"Error parsing start_time: {e}")
         
         # Process end time
         new_end_time = request.form.get('end_time')
+        end_time_updated = False
         if new_end_time and new_end_time.strip():
             try:
                 end_time = datetime.strptime(new_end_time, '%Y-%m-%dT%H:%M')
                 shift.end_time = end_time
+                end_time_updated = True
             except (ValueError, TypeError) as e:
                 print(f"Error parsing end_time: {e}")
+        
+        # Auto-sync end time if only start time was updated
+        if start_time_updated and not end_time_updated:
+            # Apply the same duration from before to the new start time
+            shift.end_time = shift.start_time + original_duration
+            print(f"Auto-adjusted end_time based on original duration: {original_duration}")
+        
+        # Ensure end time is after start time
+        if shift.end_time <= shift.start_time:
+            # Set end time to be 1 hour after start time
+            from datetime import timedelta
+            shift.end_time = shift.start_time + timedelta(hours=1)
+            print("Corrected end_time to be 1 hour after start_time")
         
         # Explicitly commit the changes
         db.session.commit()
@@ -318,6 +562,357 @@ def update_schedule():
         print(f"Shift with ID {shift_id} not found")
     
     return redirect(url_for('schedule'))
+
+@app.route('/spreadsheet_schedule')
+@login_required
+def spreadsheet_schedule():
+    """Route to display the spreadsheet view of the schedule"""
+    # Filter shifts based on user role
+    if current_user.username in ['admin1', 'admin2', 'admin3']:
+        # Admin users can see all shifts
+        shifts = Shift.query.order_by(Shift.start_time).all()
+    else:
+        # Regular users can only see their assigned shifts
+        shifts = Shift.query.filter_by(employee_id=current_user.id).order_by(Shift.start_time).all()
+    
+    # Format shift data for the spreadsheet
+    shifts_data = []
+    for shift in shifts:
+        employee_name = shift.employee.username if shift.employee else "Unassigned"
+        
+        shifts_data.append({
+            'id': shift.id,
+            'employee_name': employee_name,
+            'assignment': shift.assignment,
+            'start_time': shift.start_time.isoformat(),
+            'end_time': shift.end_time.isoformat(),
+            'status': shift.status,
+            'participants': shift.students if shift.students else ""
+        })
+    
+    # Pass any messages from the session
+    message = request.args.get('message', '')
+    message_type = request.args.get('message_type', 'info')
+    
+    return render_template(
+        'spreadsheet_view.html', 
+        shifts_data=json.dumps(shifts_data),
+        message=message,
+        message_type=message_type
+    )
+
+@app.route('/update_spreadsheet', methods=['POST'])
+@login_required
+def update_spreadsheet():
+    """Route to handle updates from the spreadsheet"""
+    if current_user.username not in ['admin1', 'admin2', 'admin3']:
+        return jsonify({'success': False, 'message': 'Unauthorized. Admin access required.'})
+    
+    try:
+        data = request.json
+        shifts_data = data.get('shifts', [])
+        
+        for shift_data in shifts_data:
+            shift_id = shift_data.get('id')
+            
+            # Handle new shifts (with temporary IDs starting with 'new_')
+            if isinstance(shift_id, str) and shift_id.startswith('new_'):
+                # Find employee by name
+                employee_name = shift_data.get('employee_name', '')
+                employee = User.query.filter_by(username=employee_name).first()
+                employee_id = employee.id if employee else None
+                
+                # Parse datetime strings
+                start_time = parse_datetime(shift_data.get('start_time'))
+                end_time = parse_datetime(shift_data.get('end_time'))
+                
+                # Skip if we couldn't parse the dates
+                if not start_time or not end_time:
+                    continue
+                
+                # Create new shift
+                new_shift = Shift(
+                    employee_id=employee_id,
+                    assignment=shift_data.get('assignment', ''),
+                    start_time=start_time,
+                    end_time=end_time,
+                    status=shift_data.get('status', 'Scheduled'),
+                    students=shift_data.get('participants', '')
+                )
+                db.session.add(new_shift)
+            else:
+                # Update existing shift
+                try:
+                    shift_id = int(shift_id)
+                    shift = Shift.query.get(shift_id)
+                    if shift:
+                        # Find employee by name
+                        employee_name = shift_data.get('employee_name', '')
+                        employee = User.query.filter_by(username=employee_name).first()
+                        
+                        if employee:
+                            shift.employee_id = employee.id
+                        
+                        # Parse datetime strings
+                        start_time = parse_datetime(shift_data.get('start_time'))
+                        end_time = parse_datetime(shift_data.get('end_time'))
+                        
+                        # Update times if they were parsed successfully
+                        if start_time:
+                            shift.start_time = start_time
+                        
+                        if end_time:
+                            shift.end_time = end_time
+                            
+                        # Store for notification
+                        time_adjusted = False
+                        original_end_time = shift.end_time
+                        
+                        # Check if we need to preserve duration when start time changes
+                        if start_time and 'start_time' in shift_data and shift_data.get('start_time'):
+                            # Get the original duration before updating times
+                            if hasattr(shift, 'original_end_time') and hasattr(shift, 'original_start_time'):
+                                original_duration = shift.original_end_time - shift.original_start_time
+                            else:
+                                original_duration = shift.end_time - shift.start_time
+                            
+                            # If we only changed start time, maintain duration
+                            if start_time and not end_time:
+                                shift.end_time = start_time + original_duration
+                                time_adjusted = True
+                        
+                        # Ensure end time is after start time
+                        if shift.end_time <= shift.start_time:
+                            # Set end time to 1 hour after start time
+                            from datetime import timedelta
+                            shift.end_time = shift.start_time + timedelta(hours=1)
+                            
+                            # Add notification about the auto-adjustment
+                            for user in User.query.all():
+                                notification = Notification(
+                                    message=f"Time adjusted: End time for {shift.assignment} was automatically set to 1 hour after start time",
+                                    user_id=user.id
+                                )
+                                db.session.add(notification)
+                            time_adjusted = True
+                        
+                        shift.assignment = shift_data.get('assignment', shift.assignment)
+                        shift.status = shift_data.get('status', shift.status)
+                        shift.students = shift_data.get('participants', shift.students)
+                except (ValueError, TypeError):
+                    continue  # Skip this row if ID is not valid
+        
+        db.session.commit()
+        
+        # Create notifications for users about the changes
+        users = User.query.all()
+        for user in users:
+            shifts_changed = []
+            for shift_data in shifts_data:
+                shift_id = shift_data.get('id')
+                if not isinstance(shift_id, str) or not shift_id.startswith('new_'):
+                    try:
+                        shift = Shift.query.get(int(shift_id))
+                        if shift:
+                            shifts_changed.append(shift.assignment)
+                    except (ValueError, TypeError):
+                        pass
+            
+            if shifts_changed:
+                notification = Notification(
+                    message=f"Schedule updated for: {', '.join(shifts_changed)}",
+                    user_id=user.id
+                )
+                db.session.add(notification)
+        
+        db.session.commit()
+        return jsonify({'success': True, 'message': 'Schedule updated successfully'})
+    
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'Error updating schedule: {str(e)}'})
+
+@app.route('/export_spreadsheet', methods=['POST'])
+@login_required
+def export_spreadsheet():
+    """Route to export the schedule to an Excel file"""
+    # Only admin users can export data
+    if current_user.username not in ['admin1', 'admin2', 'admin3']:
+        return redirect(url_for('spreadsheet_schedule', 
+                               message='Export permission denied. Admin access required.',
+                               message_type='error'))
+        
+    try:
+        # Get all shifts for admin users
+        shifts = Shift.query.order_by(Shift.start_time).all()
+        
+        # Prepare data for Excel
+        data = []
+        for shift in shifts:
+            employee_name = shift.employee.username if shift.employee else "Unassigned"
+            
+            data.append({
+                'ID': shift.id,
+                'Employee': employee_name,
+                'Assignment': shift.assignment,
+                'Start Time': shift.start_time.strftime('%Y-%m-%d %H:%M'),
+                'End Time': shift.end_time.strftime('%Y-%m-%d %H:%M'),
+                'Status': shift.status,
+                'Participants': shift.students if shift.students else ""
+            })
+        
+        # Create pandas DataFrame and Excel writer
+        df = pd.DataFrame(data)
+        
+        # Save to BytesIO object
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+            df.to_excel(writer, sheet_name='Schedule', index=False)
+            
+            # Auto-adjust columns width
+            worksheet = writer.sheets['Schedule']
+            for i, col in enumerate(df.columns):
+                # Set column width based on content
+                max_len = max(df[col].astype(str).apply(len).max(), len(col)) + 2
+                worksheet.set_column(i, i, max_len)
+        
+        output.seek(0)
+        
+        # Create a response with the Excel file
+        from flask import send_file
+        return send_file(
+            output,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=f'transdev_schedule_{datetime.now().strftime("%Y%m%d_%H%M")}.xlsx'
+        )
+    
+    except Exception as e:
+        return redirect(url_for('spreadsheet_schedule', 
+                               message=f'Error exporting schedule: {str(e)}',
+                               message_type='error'))
+
+@app.route('/import_spreadsheet', methods=['POST'])
+@login_required
+def import_spreadsheet():
+    """Route to import schedule from an Excel file"""
+    if current_user.username not in ['admin1', 'admin2', 'admin3']:
+        return redirect(url_for('spreadsheet_schedule', 
+                               message='Import permission denied. Admin access required.',
+                               message_type='error'))
+    
+    try:
+        # Check if file was uploaded
+        if 'excel_file' not in request.files:
+            return redirect(url_for('spreadsheet_schedule', 
+                                  message='No file selected',
+                                  message_type='error'))
+        
+        file = request.files['excel_file']
+        
+        # Check if file is empty
+        if file.filename == '':
+            return redirect(url_for('spreadsheet_schedule', 
+                                  message='No file selected',
+                                  message_type='error'))
+        
+        # Check file extension
+        if not file.filename.endswith(('.xlsx', '.xls')):
+            return redirect(url_for('spreadsheet_schedule', 
+                                  message='Invalid file format. Please upload an Excel file (.xlsx or .xls)',
+                                  message_type='error'))
+        
+        # Read Excel file
+        df = pd.read_excel(file)
+        
+        # Validate required columns
+        required_columns = ['Employee', 'Assignment', 'Start Time', 'End Time', 'Status']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            return redirect(url_for('spreadsheet_schedule', 
+                                  message=f'Missing required columns: {", ".join(missing_columns)}',
+                                  message_type='error'))
+        
+        # Process data and update database
+        success_count = 0
+        error_count = 0
+        
+        for _, row in df.iterrows():
+            try:
+                # Get employee
+                employee_name = row['Employee']
+                employee = User.query.filter_by(username=employee_name).first()
+                employee_id = employee.id if employee else None
+                
+                # Parse dates
+                try:
+                    start_time = pd.to_datetime(row['Start Time'])
+                    end_time = pd.to_datetime(row['End Time'])
+                except:
+                    # Skip rows with invalid dates
+                    error_count += 1
+                    continue
+                
+                # Get other fields
+                assignment = row['Assignment']
+                status = row['Status']
+                participants = str(row.get('Participants', ''))
+                
+                # Check if updating existing shift (if ID column exists)
+                shift_id = row.get('ID')
+                if pd.notna(shift_id) and isinstance(shift_id, (int, float)):
+                    shift = Shift.query.get(int(shift_id))
+                    if shift:
+                        # Update existing shift
+                        if employee_id:
+                            shift.employee_id = employee_id
+                        shift.assignment = assignment
+                        shift.start_time = start_time
+                        shift.end_time = end_time
+                        shift.status = status
+                        shift.students = participants
+                    else:
+                        # Create new shift if ID not found
+                        new_shift = Shift(
+                            employee_id=employee_id,
+                            assignment=assignment,
+                            start_time=start_time,
+                            end_time=end_time,
+                            status=status,
+                            students=participants
+                        )
+                        db.session.add(new_shift)
+                else:
+                    # Create new shift
+                    new_shift = Shift(
+                        employee_id=employee_id,
+                        assignment=assignment,
+                        start_time=start_time,
+                        end_time=end_time,
+                        status=status,
+                        students=participants
+                    )
+                    db.session.add(new_shift)
+                
+                success_count += 1
+            except Exception as e:
+                print(f"Error processing row: {e}")
+                error_count += 1
+        
+        db.session.commit()
+        
+        message = f'Import completed: {success_count} shifts processed successfully'
+        if error_count > 0:
+            message += f', {error_count} errors'
+        
+        return redirect(url_for('spreadsheet_schedule', 
+                              message=message,
+                              message_type='success' if error_count == 0 else 'warning'))
+    
+    except Exception as e:
+        return redirect(url_for('spreadsheet_schedule', 
+                              message=f'Error importing schedule: {str(e)}',
+                              message_type='error'))
 
 if __name__ == '__main__':
     app.run(debug=True)

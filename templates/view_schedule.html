@@ -3,109 +3,718 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>View Schedule</title>
+    <title>TransDev Schedule Viewer</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css' rel='stylesheet' />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js'></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
+                },
                 events: '/api/schedule', // Fetch events from the backend
                 eventClick: function(info) {
-                    // Display event details in a modal
-                    alert('Event: ' + info.event.title + '\nStart: ' + info.event.start + '\nEnd: ' + info.event.end);
+                    // Display event details in a modal instead of an alert
+                    document.getElementById('eventTitle').textContent = info.event.title;
+                    document.getElementById('eventStart').textContent = info.event.start ? new Date(info.event.start).toLocaleString() : 'Not specified';
+                    document.getElementById('eventEnd').textContent = info.event.end ? new Date(info.event.end).toLocaleString() : 'Not specified';
+                    document.getElementById('eventAssignment').textContent = info.event.extendedProps.assignment || 'Not specified';
+                    document.getElementById('eventStatus').textContent = info.event.extendedProps.status || 'Not specified';
+                    
+                    // Show the modal
+                    document.getElementById('eventModal').style.display = 'block';
                 },
                 datesSet: function(info) {
                     console.log('View changed to: ' + info.startStr + ' - ' + info.endStr);
+                },
+                // Add more options for better visualization
+                dayMaxEvents: true, // allow "more" link when too many events
+                eventTimeFormat: { // like '14:30'
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    meridiem: 'short'
                 }
             });
             calendar.render();
+            
+            // Close modal when clicking the X
+            document.querySelector('.close-modal').addEventListener('click', function() {
+                document.getElementById('eventModal').style.display = 'none';
+            });
+            
+            // Close modal when clicking outside of it
+            window.addEventListener('click', function(event) {
+                if (event.target == document.getElementById('eventModal')) {
+                    document.getElementById('eventModal').style.display = 'none';
+                }
+            });
         });
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Filter functionality
+            document.getElementById('filterStatus').addEventListener('change', filterShifts);
+            document.getElementById('filterText').addEventListener('input', filterShifts);
+            
+            function filterShifts() {
+                const statusFilter = document.getElementById('filterStatus').value;
+                const textFilter = document.getElementById('filterText').value.toLowerCase();
+                
+                const rows = document.querySelectorAll('#scheduleTable tbody tr');
+                
+                rows.forEach(row => {
+                    const status = row.querySelector('td:nth-child(6)').textContent;
+                    const assignment = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    const employeeName = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                    const participants = row.querySelector('td:nth-child(3) input[type="text"]').value.toLowerCase();
+                    
+                    const statusMatch = statusFilter === 'all' || status === statusFilter;
+                    const textMatch = textFilter === '' || 
+                                     assignment.includes(textFilter) || 
+                                     employeeName.includes(textFilter) || 
+                                     participants.includes(textFilter);
+                    
+                    row.style.display = statusMatch && textMatch ? '' : 'none';
+                });
+            }
+            
+            // Form submission with enhanced feedback
             const participantForms = document.querySelectorAll('form[action="/update_students"]');
             participantForms.forEach(form => {
                 form.addEventListener('submit', function(event) {
                     event.preventDefault();
                     const formData = new FormData(form);
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    const originalBtnText = submitBtn.innerHTML;
+                    
+                    // Show loading state
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+                    
                     fetch(form.action, {
                         method: 'POST',
                         body: formData
                     })
                     .then(response => {
                         if (response.ok) {
-                            alert('Participants updated successfully!');
-                            location.reload();
+                            showNotification('Participants updated successfully!', 'success');
+                            
+                            // Highlight the updated row
+                            const row = form.closest('tr');
+                            row.classList.add('highlight-update');
+                            setTimeout(() => {
+                                row.classList.remove('highlight-update');
+                            }, 2000);
                         } else {
-                            alert('Failed to update participants.');
+                            showNotification('Failed to update participants.', 'error');
                         }
+                    })
+                    .catch(error => {
+                        showNotification('An error occurred: ' + error, 'error');
+                    })
+                    .finally(() => {
+                        // Restore button state
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnText;
                     });
                 });
+            });
+            
+            // Notification function
+            function showNotification(message, type) {
+                const notification = document.createElement('div');
+                notification.className = 'notification ' + type;
+                notification.innerHTML = `
+                    <span>${message}</span>
+                    <button class="notification-close">&times;</button>
+                `;
+                document.body.appendChild(notification);
+                
+                // Add click event for close button
+                notification.querySelector('.notification-close').addEventListener('click', function() {
+                    document.body.removeChild(notification);
+                });
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 5000);
+            }
+            
+            // Toggle view between table and calendar
+            document.getElementById('toggleView').addEventListener('click', function() {
+                const tableView = document.getElementById('tableView');
+                const calendarView = document.getElementById('calendar');
+                
+                if (tableView.style.display === 'none') {
+                    tableView.style.display = 'block';
+                    calendarView.style.display = 'none';
+                    this.innerHTML = '<i class="fas fa-calendar"></i> Show Calendar';
+                } else {
+                    tableView.style.display = 'none';
+                    calendarView.style.display = 'block';
+                    this.innerHTML = '<i class="fas fa-table"></i> Show Table';
+                }
             });
         });
     </script>
 </head>
 <body>
-    <h1>Your Schedule</h1>
-    <table>
-        <tr>
-            <th>Trainer Name</th>
-            <th>Assignment</th>
-            <th>Participants</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-            <th>Status</th>
-        </tr>
-        {% for shift in shifts %}
-        <tr>
-            <td>{{ shift.employee_name }}</td>
-            <td>{{ shift.assignment }}</td>
-            <td>
-                <form method="POST" action="/update_students">
-                    <input type="hidden" name="shift_id" value="{{ shift.id }}">
-                    <input type="text" name="participants" value="{{ shift.students }}" placeholder="Enter participant names">
-                    <button type="submit">Update</button>
+    <nav class="top-nav">
+        <div class="logo">
+            <i class="fas fa-bus"></i> TransDev Scheduler
+        </div>
+        <div class="nav-links">
+            <a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/notifications"><i class="fas fa-bell"></i> Notifications</a>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="page-header">
+            <h1><i class="fas fa-calendar-alt"></i> Your Schedule</h1>
+            <div class="header-actions">
+                <button id="toggleView" class="btn btn-secondary">
+                    <i class="fas fa-calendar"></i> Show Calendar
+                </button>
+            </div>
+        </header>
+        
+        {% if current_user.username in ['admin1', 'admin2', 'admin3'] %}
+        <div class="admin-actions">
+            <h3>Admin Tools</h3>
+            <div class="excel-import-form">
+                <form action="/import_schedule" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="excel_file">Import Schedule from Excel:</label>
+                        <input type="file" id="excel_file" name="excel_file" class="form-control" accept=".xlsx,.xls">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-file-import"></i> Import Data
+                    </button>
+                    <a href="{{ url_for('download_template') }}" class="btn btn-secondary ml-2" download>
+                        <i class="fas fa-download"></i> Download Template
+                    </a>
                 </form>
-            </td>
-            <td>{{ shift.start_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
-            <td>{{ shift.end_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
-            <td>{{ shift.status }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    <div id="calendar"></div>
+                <p class="mt-2 text-muted">
+                    <small>Excel file must include columns: employee_id, assignment, start_time, end_time, status, and students</small>
+                </p>
+                {% if import_message %}
+                <div class="alert {% if import_error %}alert-danger{% else %}alert-success{% endif %}">
+                    {{ import_message }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="filter-section">
+            <div class="filter-group">
+                <label for="filterStatus">Filter by Status:</label>
+                <select id="filterStatus" class="form-control">
+                    <option value="all">All Statuses</option>
+                    <option value="Scheduled">Scheduled</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                    <option value="Pending">Pending</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filterText">Search:</label>
+                <input type="text" id="filterText" class="form-control" placeholder="Search assignments, names, participants...">
+            </div>
+        </div>
+        
+        <div id="tableView">
+            <table id="scheduleTable" class="data-table">
+                <thead>
+                    <tr>
+                        <th><i class="fas fa-user"></i> Trainer Name</th>
+                        <th><i class="fas fa-tasks"></i> Assignment</th>
+                        <th><i class="fas fa-users"></i> Participants</th>
+                        <th><i class="fas fa-clock"></i> Start Time</th>
+                        <th><i class="fas fa-clock"></i> End Time</th>
+                        <th><i class="fas fa-info-circle"></i> Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for shift in shifts %}
+                    <tr class="shift-row" data-id="{{ shift.id }}">
+                        <td>{{ shift.employee_name }}</td>
+                        <td>{{ shift.assignment }}</td>
+                        <td>
+                            <form method="POST" action="/update_students" class="participant-form">
+                                <input type="hidden" name="shift_id" value="{{ shift.id }}">
+                                <input type="text" name="participants" value="{{ shift.students }}" placeholder="Enter participant names" class="form-control participant-input">
+                                <button type="submit" class="btn btn-primary btn-sm update-btn">
+                                    <i class="fas fa-save"></i> Update
+                                </button>
+                            </form>
+                        </td>
+                        <td>{{ shift.start_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                        <td>{{ shift.end_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                        <td>
+                            <span class="status-badge status-{{ shift.status.lower() }}">
+                                {{ shift.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div id="calendar" style="display: none;"></div>
+        
+        <!-- Event Details Modal -->
+        <div id="eventModal" class="modal">
+            <div class="modal-content">
+                <span class="close-modal">&times;</span>
+                <h2 id="eventTitle"></h2>
+                <div class="event-details">
+                    <p><strong>Assignment:</strong> <span id="eventAssignment"></span></p>
+                    <p><strong>Start:</strong> <span id="eventStart"></span></p>
+                    <p><strong>End:</strong> <span id="eventEnd"></span></p>
+                    <p><strong>Status:</strong> <span id="eventStatus"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <style>
-        #calendar {
-            max-width: 900px;
-            margin: 0 auto;
+        /* General Styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
         }
-        table {
+        
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+        
+        /* Navigation */
+        .top-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #1a3b5d;
+            color: #fff;
+            padding: 10px 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        
+        .nav-links a {
+            color: #fff;
+            text-decoration: none;
+            margin-left: 20px;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: #4dabf7;
+        }
+        
+        /* Header */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        /* Button Styles */
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: #1a73e8;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background-color: #1557b0;
+        }
+        
+        .btn-secondary {
+            background-color: #5f6368;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #4a4e52;
+        }
+        
+        .btn-sm {
+            padding: 4px 8px;
+            font-size: 0.8em;
+        }
+        
+        /* Filter Section */
+        .filter-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .filter-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        /* Table Styles */
+        .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 20px 0;
-            font-size: 18px;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .data-table thead {
+            background-color: #1a3b5d;
+            color: white;
+        }
+        
+        .data-table th {
+            padding: 12px 15px;
             text-align: left;
+            font-weight: 500;
         }
-        th, td {
-            border: 1px solid #dddddd;
-            padding: 8px;
+        
+        .data-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
         }
-        th {
-            background-color: #f2f2f2;
-        }
-        tr:nth-child(even) {
+        
+        .data-table tr:hover {
             background-color: #f9f9f9;
+        }
+        
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+        
+        .status-scheduled {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+        }
+        
+        .status-completed {
+            background-color: #e8f5e9;
+            color: #1b5e20;
+        }
+        
+        .status-cancelled {
+            background-color: #ffebee;
+            color: #b71c1c;
+        }
+        
+        .status-pending {
+            background-color: #fff8e1;
+            color: #ff8f00;
+        }
+        
+        /* Form Styles */
+        .participant-form {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .participant-input {
+            flex: 1;
+        }
+        
+        /* Calendar Styles */
+        #calendar {
+            max-width: 100%;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            animation: modalopen 0.3s;
+        }
+        
+        @keyframes modalopen {
+            from {opacity: 0; transform: translateY(-20px);}
+            to {opacity: 1; transform: translateY(0);}
+        }
+        
+        .close-modal {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close-modal:hover {
+            color: #333;
+        }
+        
+        .event-details {
+            margin-top: 20px;
+        }
+        
+        /* Notifications */
+        .notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s forwards;
+            z-index: 1000;
+            min-width: 300px;
+        }
+        
+        @keyframes slideIn {
+            from {transform: translateX(100%); opacity: 0;}
+            to {transform: translateX(0); opacity: 1;}
+        }
+        
+        .notification.success {
+            background-color: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        
+        .notification.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            color: inherit;
+            font-size: 18px;
+            cursor: pointer;
+            margin-left: 15px;
+        }
+        
+        /* Highlight effect for updated rows */
+        .highlight-update {
+            animation: highlightRow 2s;
+        }
+        
+        @keyframes highlightRow {
+            0% { background-color: #fff; }
+            20% { background-color: #d4edda; }
+            80% { background-color: #d4edda; }
+            100% { background-color: #fff; }
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .top-nav {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .nav-links {
+                margin-top: 10px;
+            }
+            
+            .page-header {
+                flex-direction: column;
+            }
+            
+            .header-actions {
+                margin-top: 10px;
+            }
+            
+            .data-table {
+                font-size: 0.9em;
+            }
+            
+            .data-table th, .data-table td {
+                padding: 8px;
+            }
+            
+            .participant-form {
+                flex-direction: column;
+            }
+            
+            .update-btn {
+                width: 100%;
+                margin-top: 5px;
+            }
         }
         tr:hover {
             background-color: #f1f1f1;
         }
     </style>
-    <a href="/dashboard">Back to Dashboard</a>
     <footer class="footer">
-        <p>&copy; SIX7ONE8 CODEZ 2025</p>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3><i class="fas fa-bus"></i> TransDev Scheduler</h3>
+                <p>Streamlining transportation training schedules for excellence.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="/dashboard">Dashboard</a></li>
+                    <li><a href="/notifications">Notifications</a></li>
+                    <li><a href="mailto:SIX7ONE8@ICLOUD.COM">Support</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Contact</h3>
+                <p><i class="fas fa-envelope"></i> SIX7ONE8@ICLOUD.COM</p>
+                <p><i class="fas fa-phone"></i> 303-995-9851</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; SIX7ONE8 CODEZ 2025 | All Rights Reserved</p>
+        </div>
     </footer>
+    
+    <style>
+        /* Footer styles */
+        .footer {
+            background-color: #1a3b5d;
+            color: #fff;
+            padding: 30px 0 10px;
+            margin-top: 50px;
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .footer-section {
+            flex: 1;
+            min-width: 250px;
+            margin-bottom: 20px;
+            padding: 0 15px;
+        }
+        
+        .footer-section h3 {
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-section a {
+            color: #9ed1ff;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-section a:hover {
+            color: #fff;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .footer-content {
+                flex-direction: column;
+            }
+        }
+    </style>
 </body>
 </html>

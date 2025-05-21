@@ -3,98 +3,717 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schedule</title>
+    <title>TransDev Schedule Management</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .top-nav {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .nav-links a {
+            color: white;
+            margin-left: 20px;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: var(--secondary-color);
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        
+        .form-section {
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 10px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: var(--dark-color);
+            color: white;
+            font-weight: 500;
+        }
+        
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        
+        .shift-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .badge-scheduled {
+            background-color: #3498db;
+            color: white;
+        }
+        
+        .badge-completed {
+            background-color: #2ecc71;
+            color: white;
+        }
+        
+        .badge-cancelled {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .badge-pending {
+            background-color: #f39c12;
+            color: white;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 4px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        
+        .success {
+            background-color: var(--secondary-color);
+        }
+        
+        .error {
+            background-color: var(--danger-color);
+        }
+        
+        .notification-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            border-bottom: 2px solid var(--primary-color);
+            color: var(--primary-color);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: var(--dark-color);
+            color: white;
+            text-align: center;
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .footer-links a {
+            color: white;
+            margin: 0 10px;
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            color: var(--secondary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .top-nav {
+                flex-direction: column;
+                padding: 10px;
+            }
+            
+            .nav-links {
+                margin-top: 10px;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .header-actions {
+                margin-top: 10px;
+            }
+            
+            .table-responsive {
+                overflow-x: auto;
+            }
+            
+            .footer-content {
+                flex-direction: column;
+            }
+            
+            .footer-links {
+                margin-top: 10px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Schedule</h1>
+    <nav class="top-nav">
+        <div class="logo">
+            <i class="fas fa-bus"></i> TransDev Scheduler
+        </div>
+        <div class="nav-links">
+            <a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/schedule" class="active"><i class="fas fa-calendar-alt"></i> Schedule</a>
+            <a href="/view_schedule"><i class="fas fa-eye"></i> View Schedule</a>
+            <a href="/notifications"><i class="fas fa-bell"></i> Notifications</a>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+        <button class="mobile-menu-toggle" id="mobileMenuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+    </nav>
 
-    <h2>Add New Shift</h2>
-    <form method="POST" action="/schedule">
-        <label for="employee_id">Trainer:</label>
-        <select id="employee_id" name="employee_id" required>
-            {% for employee in employees %}
-            <option value="{{ employee.id }}">{{ employee.username }}</option>
-            {% endfor %}
-        </select>
-        <br>
-        <label for="assignment">Assignment:</label>
-        <input type="text" id="assignment" name="assignment" required>
-        <br>
-        <label for="start_time">Start Time:</label>
-        <input type="datetime-local" id="start_time" name="start_time" required>
-        <br>
-        <label for="end_time">End Time:</label>
-        <input type="datetime-local" id="end_time" name="end_time" required>
-        <br>
-        <label for="students">Participants:</label>
-        <input type="text" id="students" name="students" placeholder="Enter participant names">
-        <br>
-        <button type="submit">Add Shift</button>
-    </form>
-
-    <h2>Existing Shifts</h2>
-    <table>
-        <tr>
-            <th>Trainer</th>
-            <th>Assignment</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-            <th>Status</th>
-        </tr>
-        {% for shift in shifts %}
-        <tr>
-            <td>{{ shift.employee.username }}</td>
-            <td>{{ shift.assignment }}</td>
-            <td>{{ shift.start_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
-            <td>{{ shift.end_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
-            <td>{{ shift.status }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-
-    <table>
-        <tr>
-            <th>Trainer</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-            <th>Actions</th>
-        </tr>
-        {% for shift in shifts %}
-        <tr>
-            <td>{{ shift.employee.username }}</td>
-            <td>{{ shift.start_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
-            <td>{{ shift.end_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
-            <td>
-                <form method="POST" action="{{ url_for('update_schedule') }}">
-                    <input type="hidden" name="shift_id" value="{{ shift.id }}">
-                    <input type="datetime-local" name="start_time" value="{{ shift.start_time.strftime('%Y-%m-%dT%H:%M') }}" title="Enter the start time" placeholder="YYYY-MM-DDTHH:MM">
-                    <input type="datetime-local" name="end_time" value="{{ shift.end_time.strftime('%Y-%m-%dT%H:%M') }}" title="Enter the end time" placeholder="YYYY-MM-DDTHH:MM">
-                    <label for="assignment_{{ shift.id }}">Assignment:</label>
-                    <input type="text" id="assignment_{{ shift.id }}" name="assignment" value="{{ shift.assignment }}" required>
-                    <button type="submit">Update</button>
+    <div class="container">
+        <header class="page-header">
+            <h1><i class="fas fa-calendar-edit"></i> Schedule Management</h1>
+        </header>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="add-shift">Add New Shift</div>
+            <div class="tab" data-tab="existing-shifts">Existing Shifts</div>
+        </div>
+        
+        <div class="tab-content active" id="add-shift">
+            <div class="card">
+                <form id="addShiftForm" method="POST" action="/schedule" class="form-section">
+                    <div class="form-group">
+                        <label for="employee_id"><i class="fas fa-user"></i> Trainer:</label>
+                        <select id="employee_id" name="employee_id" required class="form-control">
+                            {% for employee in employees %}
+                            <option value="{{ employee.id }}">{{ employee.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="assignment"><i class="fas fa-tasks"></i> Assignment:</label>
+                        <input type="text" id="assignment" name="assignment" required class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="start_time"><i class="fas fa-clock"></i> Start Time:</label>
+                        <input type="datetime-local" id="start_time" name="start_time" required class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="end_time"><i class="fas fa-clock"></i> End Time:</label>
+                        <input type="datetime-local" id="end_time" name="end_time" required class="form-control">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="students"><i class="fas fa-users"></i> Participants:</label>
+                        <input type="text" id="students" name="students" placeholder="Enter participant names" class="form-control">
+                    </div>
+                    
+                    <button type="submit" class="btn"><i class="fas fa-plus"></i> Add Shift</button>
                 </form>
-            </td>
-            <td>
-                <form method="POST" action="/update_students">
-                    <input type="hidden" name="shift_id" value="{{ shift.id }}">
-                    <input type="text" name="students" value="{{ shift.students }}" placeholder="Enter participant names">
-                    <button type="submit">Add Participants</button>
-                </form>
-            </td>
-            <td>
-                <form method="POST" action="/delete_schedule">
-                    <input type="hidden" name="shift_id" value="{{ shift.id }}">
-                    <button type="submit" class="delete-button">Delete</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
-    <a href="/dashboard">Back to Dashboard</a>
+            </div>
+        </div>
+        
+        <div class="tab-content" id="existing-shifts">
+            <div class="card">
+                <h2><i class="fas fa-list"></i> Current Shifts</h2>
+                
+                <div class="filter-section">
+                    <div class="form-group">
+                        <label for="filterStatus">Filter by Status:</label>
+                        <select id="filterStatus" class="form-control">
+                            <option value="all">All Statuses</option>
+                            <option value="Scheduled">Scheduled</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                            <option value="Pending">Pending</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="filterText">Search:</label>
+                        <input type="text" id="filterText" class="form-control" placeholder="Search by name, assignment...">
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table id="shiftsTable">
+                        <thead>
+                            <tr>
+                                <th>Trainer</th>
+                                <th>Assignment</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Status</th>
+                                <th>Participants</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for shift in shifts %}
+                            <tr data-status="{{ shift.status }}">
+                                <td>{{ shift.employee.username }}</td>
+                                <td>{{ shift.assignment }}</td>
+                                <td>{{ shift.start_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                                <td>{{ shift.end_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                                <td>
+                                    <span class="badge badge-{{ shift.status.lower() }}">
+                                        {{ shift.status }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <form method="POST" action="/update_students" class="participant-form">
+                                        <input type="hidden" name="shift_id" value="{{ shift.id }}">
+                                        <input type="text" name="students" value="{{ shift.students }}" placeholder="Enter participant names" class="form-control">
+                                        <button type="submit" class="btn btn-sm"><i class="fas fa-user-plus"></i> Update</button>
+                                    </form>
+                                </td>
+                                <td class="shift-actions">
+                                    <button type="button" class="btn btn-sm edit-shift-btn" data-shift-id="{{ shift.id }}">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <form method="POST" action="/delete_schedule" class="delete-form">
+                                        <input type="hidden" name="shift_id" value="{{ shift.id }}">
+                                        <button type="submit" class="btn btn-danger btn-sm">
+                                            <i class="fas fa-trash"></i> Delete
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            <tr class="edit-row" id="edit-shift-{{ shift.id }}" style="display: none;">
+                                <td colspan="7">
+                                    <form method="POST" action="{{ url_for('update_schedule') }}" class="update-form">
+                                        <input type="hidden" name="shift_id" value="{{ shift.id }}">
+                                        <div class="form-group">
+                                            <label for="assignment_{{ shift.id }}">Assignment:</label>
+                                            <input type="text" id="assignment_{{ shift.id }}" name="assignment" value="{{ shift.assignment }}" required class="form-control">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="start_time_{{ shift.id }}">Start Time:</label>
+                                            <input type="datetime-local" id="start_time_{{ shift.id }}" name="start_time" value="{{ shift.start_time.strftime('%Y-%m-%dT%H:%M') }}" required class="form-control">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="end_time_{{ shift.id }}">End Time:</label>
+                                            <input type="datetime-local" id="end_time_{{ shift.id }}" name="end_time" value="{{ shift.end_time.strftime('%Y-%m-%dT%H:%M') }}" required class="form-control">
+                                        </div>
+                                        <button type="submit" class="btn"><i class="fas fa-save"></i> Update</button>
+                                        <button type="button" class="btn btn-secondary cancel-edit" data-shift-id="{{ shift.id }}">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <footer class="footer">
-        <p>&copy; SIX7ONE8 CODEZ 2025</p>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3><i class="fas fa-bus"></i> TransDev Scheduler</h3>
+                <p>Streamlining transportation training schedules for excellence.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="/dashboard">Dashboard</a></li>
+                    <li><a href="/notifications">Notifications</a></li>
+                    <li><a href="mailto:SIX7ONE8@ICLOUD.COM">Support</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Contact</h3>
+                <p><i class="fas fa-envelope"></i> SIX7ONE8@ICLOUD.COM</p>
+                <p><i class="fas fa-phone"></i> 303-995-9851</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; SIX7ONE8 CODEZ 2025 | All Rights Reserved</p>
+        </div>
     </footer>
+    
+    <style>
+        /* Footer styles */
+        .footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 30px 0 10px;
+            margin-top: 50px;
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .footer-section {
+            flex: 1;
+            min-width: 250px;
+            margin-bottom: 20px;
+            padding: 0 15px;
+        }
+        
+        .footer-section h3 {
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-section a {
+            color: var(--light-color);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-section a:hover {
+            color: white;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .footer-content {
+                flex-direction: column;
+            }
+        }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    // Remove active class from all tabs and contents
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    
+                    // Add active class to clicked tab
+                    this.classList.add('active');
+                    
+                    // Show corresponding content
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Edit shift functionality
+            const editButtons = document.querySelectorAll('.edit-shift-btn');
+            editButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const shiftId = this.getAttribute('data-shift-id');
+                    const editRow = document.getElementById(`edit-shift-${shiftId}`);
+                    
+                    if (editRow.style.display === 'none' || !editRow.style.display) {
+                        editRow.style.display = 'table-row';
+                        this.innerHTML = '<i class="fas fa-times"></i> Cancel';
+                    } else {
+                        editRow.style.display = 'none';
+                        this.innerHTML = '<i class="fas fa-edit"></i> Edit';
+                    }
+                });
+            });
+            
+            // Cancel edit functionality
+            const cancelButtons = document.querySelectorAll('.cancel-edit');
+            cancelButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const shiftId = this.getAttribute('data-shift-id');
+                    const editRow = document.getElementById(`edit-shift-${shiftId}`);
+                    const editButton = document.querySelector(`.edit-shift-btn[data-shift-id="${shiftId}"]`);
+                    
+                    editRow.style.display = 'none';
+                    editButton.innerHTML = '<i class="fas fa-edit"></i> Edit';
+                });
+            });
+            
+            // Filter shifts functionality
+            const filterStatus = document.getElementById('filterStatus');
+            const filterText = document.getElementById('filterText');
+            
+            function filterShifts() {
+                const statusFilter = filterStatus.value;
+                const textFilter = filterText.value.toLowerCase();
+                
+                const rows = document.querySelectorAll('#shiftsTable tbody tr:not(.edit-row)');
+                
+                rows.forEach(row => {
+                    const status = row.getAttribute('data-status');
+                    const trainerName = row.querySelector('td:nth-child(1)').textContent.toLowerCase();
+                    const assignment = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    const participants = row.querySelector('input[name="students"]').value.toLowerCase();
+                    
+                    const statusMatch = statusFilter === 'all' || status === statusFilter;
+                    const textMatch = textFilter === '' || 
+                                     assignment.includes(textFilter) || 
+                                     trainerName.includes(textFilter) || 
+                                     participants.includes(textFilter);
+                    
+                    row.style.display = statusMatch && textMatch ? '' : 'none';
+                    
+                    // Also hide corresponding edit row
+                    const shiftId = row.querySelector('.edit-shift-btn').getAttribute('data-shift-id');
+                    const editRow = document.getElementById(`edit-shift-${shiftId}`);
+                    if (editRow) {
+                        editRow.style.display = 'none';
+                    }
+                });
+            }
+            
+            if (filterStatus) filterStatus.addEventListener('change', filterShifts);
+            if (filterText) filterText.addEventListener('input', filterShifts);
+            
+            // Form submission with enhanced feedback
+            const forms = document.querySelectorAll('form');
+            forms.forEach(form => {
+                form.addEventListener('submit', function(event) {
+                    event.preventDefault();
+                    
+                    const formData = new FormData(this);
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const originalBtnText = submitBtn.innerHTML;
+                    
+                    // Show loading state
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+                    
+                    fetch(this.action, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            showNotification('Operation completed successfully!', 'success');
+                            
+                            // Reload the page to show updated data
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1000);
+                        } else {
+                            showNotification('Failed to complete operation.', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showNotification('An error occurred: ' + error, 'error');
+                    })
+                    .finally(() => {
+                        // Restore button state
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalBtnText;
+                    });
+                });
+            });
+            
+            // Notification function
+            function showNotification(message, type) {
+                const notification = document.createElement('div');
+                notification.className = 'notification ' + type;
+                notification.innerHTML = `
+                    <span>${message}</span>
+                    <button class="notification-close">&times;</button>
+                `;
+                document.body.appendChild(notification);
+                
+                // Add click event for close button
+                notification.querySelector('.notification-close').addEventListener('click', function() {
+                    document.body.removeChild(notification);
+                });
+                
+                // Auto remove after 5 seconds
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 5000);
+            }
+        });
+    </script>
 </body>
 </html>

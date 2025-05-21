@@ -3,88 +3,663 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notifications</title>
+    <title>TransDev Notifications</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --light-color: #ecf0f1;
+            --dark-color: #34495e;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .top-nav {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .nav-links a {
+            color: white;
+            margin-left: 20px;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: var(--secondary-color);
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            padding: 20px;
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-bottom: 20px;
         }
+        
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            padding: 12px 15px;
             text-align: left;
+            border-bottom: 1px solid #ddd;
         }
+        
         th {
-            background-color: #f2f2f2;
-            font-weight: bold;
+            background-color: var(--dark-color);
+            color: white;
+            font-weight: 500;
         }
+        
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+        
         tr:hover {
             background-color: #f1f1f1;
         }
+        
         .checkbox-cell {
-            width: 40px;
+            width: 60px;
             text-align: center;
         }
-        .notification-checkbox {
-            transform: scale(1.5);
-            cursor: pointer;
+        
+        .action-cell {
+            width: 100px;
+            text-align: center;
         }
-        .delete-btn {
-            background-color: #ff4d4d;
+        
+        .notification-checkbox {
+            position: relative;
+            height: 20px;
+            width: 20px;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            transition: all 0.3s;
+        }
+        
+        .notification-checkbox:checked {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .notification-checkbox:checked::after {
+            content: '✓';
+            position: absolute;
             color: white;
+            font-size: 14px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 8px 15px;
             border: none;
-            padding: 5px 10px;
             border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .delete-btn:hover {
-            background-color: #ff0000;
-        }
-        .action-cell {
-            width: 80px;
+            transition: background-color 0.3s, transform 0.1s;
+            font-weight: 500;
             text-align: center;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .notification-message {
+            position: relative;
+            padding-left: 10px;
+        }
+        
+        .notification-message.unread {
+            font-weight: 500;
+        }
+        
+        .notification-message.unread::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+        }
+        
+        .notification-actions {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .notification-status {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            margin-right: 10px;
+        }
+        
+        .status-badge.all {
+            background-color: var(--dark-color);
+            color: white;
+        }
+        
+        .status-badge.unread {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .status-badge.read {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #777;
+        }
+        
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            color: #aaa;
+        }
+        
+        .notification-time {
+            color: #777;
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding: 20px;
+            background-color: var(--dark-color);
+            color: white;
+            text-align: center;
+        }
+        
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .footer-links a {
+            color: white;
+            margin: 0 10px;
+            text-decoration: none;
+        }
+        
+        .footer-links a:hover {
+            color: var(--secondary-color);
+        }
+        
+        .select-all-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .select-all-container label {
+            margin-left: 5px;
+            cursor: pointer;
+        }
+        
+        .search-box {
+            width: 100%;
+            max-width: 300px;
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 10px 15px 10px 35px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+        }
+        
+        @media (max-width: 768px) {
+            .top-nav {
+                flex-direction: column;
+                padding: 10px;
+            }
+            
+            .nav-links {
+                margin-top: 10px;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .nav-links a {
+                margin: 5px 10px;
+            }
+            
+            .page-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .header-actions {
+                margin-top: 10px;
+                width: 100%;
+            }
+            
+            .notification-actions {
+                flex-direction: column;
+            }
+            
+            .notification-actions .btn-group {
+                margin-bottom: 10px;
+            }
+            
+            .table-responsive {
+                overflow-x: auto;
+            }
+            
+            th, td {
+                padding: 8px 10px;
+            }
+            
+            .footer-content {
+                flex-direction: column;
+            }
+            
+            .footer-links {
+                margin-top: 10px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Notifications</h1>
-    <table>
-        <tr>
-            <th class="checkbox-cell">Mark as Read</th>
-            <th class="action-cell">Delete</th>
-            <th>Message</th>
-        </tr>
-        {% for notification in notifications %}
-        <tr id="notification-{{ notification.id }}">
-            <td class="checkbox-cell">
-                <input type="checkbox" class="notification-checkbox" 
-                       data-notification-id="{{ notification.id }}"
-                       {% if notification.is_read %}checked disabled{% endif %}>
-            </td>
-            <td class="action-cell">
-                <button class="delete-btn" data-notification-id="{{ notification.id }}">Delete</button>
-            </td>
-            <td>{{ notification.message }}</td>
-        </tr>
-        {% endfor %}
-    </table>
-    <a href="/dashboard">Back to Dashboard</a>
+    <nav class="top-nav">
+        <div class="logo">
+            <i class="fas fa-bus"></i> TransDev Scheduler
+        </div>
+        <div class="nav-links">
+            <a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/schedule"><i class="fas fa-calendar-alt"></i> Schedule</a>
+            <a href="/view_schedule"><i class="fas fa-eye"></i> View Schedule</a>
+            <a href="/notifications" class="active"><i class="fas fa-bell"></i> Notifications</a>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="page-header">
+            <h1><i class="fas fa-bell"></i> Notifications</h1>
+            <div class="header-actions">
+                <div class="notification-status">
+                    <span class="status-badge all" id="filter-all">All</span>
+                    <span class="status-badge unread" id="filter-unread">Unread</span>
+                    <span class="status-badge read" id="filter-read">Read</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="card">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchNotifications" placeholder="Search notifications...">
+            </div>
+            
+            <div class="select-all-container">
+                <input type="checkbox" id="select-all" class="notification-checkbox">
+                <label for="select-all">Select All</label>
+                <button id="mark-selected-read" class="btn btn-primary" style="margin-left: 10px;">
+                    <i class="fas fa-check-double"></i> Mark Selected as Read
+                </button>
+                <button id="delete-selected" class="btn btn-danger" style="margin-left: 10px;">
+                    <i class="fas fa-trash"></i> Delete Selected
+                </button>
+                <button id="delete-all" class="btn btn-danger" style="margin-left: 10px;">
+                    <i class="fas fa-trash-alt"></i> Delete All
+                </button>
+            </div>
+            
+            <div class="table-responsive">
+                <table id="notificationsTable">
+                    <thead>
+                        <tr>
+                            <th class="checkbox-cell">Select</th>
+                            <th class="action-cell">Actions</th>
+                            <th>Notification</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for notification in notifications %}
+                        <tr id="notification-{{ notification.id }}" data-read="{{ notification.is_read|lower }}">
+                            <td class="checkbox-cell">
+                                <input type="checkbox" class="notification-checkbox notification-select" 
+                                      data-notification-id="{{ notification.id }}" value="{{ notification.id }}">
+                            </td>
+                            <td class="action-cell">
+                                {% if not notification.is_read %}
+                                <button class="btn btn-primary mark-read-btn" data-notification-id="{{ notification.id }}" title="Mark as read">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-danger delete-btn" data-notification-id="{{ notification.id }}" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                            <td>
+                                <div class="notification-message {% if not notification.is_read %}unread{% endif %}">
+                                    {{ notification.message }}
+                                    <div class="notification-time">
+                                        {% if notification.created_at %}
+                                            <i class="fas fa-clock"></i> {{ notification.created_at.strftime('%m/%d/%Y %I:%M %p') }}
+                                        {% else %}
+                                            <i class="fas fa-clock"></i> Recently
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% if not notifications %}
+                        <tr>
+                            <td colspan="3">
+                                <div class="empty-state">
+                                    <i class="fas fa-bell-slash"></i>
+                                    <h3>No notifications</h3>
+                                    <p>You don't have any notifications at the moment.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="notification-actions">
+                <div class="btn-group">
+                    <a href="/dashboard" class="btn btn-primary">
+                        <i class="fas fa-home"></i> Back to Dashboard
+                    </a>
+                </div>
+                {% if notifications %}
+                <div class="btn-group">
+                    <button id="mark-all-read" class="btn btn-primary">
+                        <i class="fas fa-check-double"></i> Mark All as Read
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3><i class="fas fa-bus"></i> TransDev Scheduler</h3>
+                <p>Streamlining transportation training schedules for excellence.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <ul>
+                    <li><a href="/dashboard">Dashboard</a></li>
+                    <li><a href="/view_schedule">View Schedule</a></li>
+                    <li><a href="mailto:SIX7ONE8@ICLOUD.COM">Support</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h3>Contact</h3>
+                <p><i class="fas fa-envelope"></i> SIX7ONE8@ICLOUD.COM</p>
+                <p><i class="fas fa-phone"></i> 303-995-9851</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; SIX7ONE8 CODEZ 2025 | All Rights Reserved</p>
+        </div>
+    </footer>
+    
+    <style>
+        /* Enhanced Footer styles */
+        .footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 30px 0 10px;
+            margin-top: 50px;
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .footer-section {
+            flex: 1;
+            min-width: 250px;
+            margin-bottom: 20px;
+            padding: 0 15px;
+        }
+        
+        .footer-section h3 {
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+        
+        .footer-section a {
+            color: var(--light-color);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        
+        .footer-section a:hover {
+            color: white;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .footer-content {
+                flex-direction: column;
+            }
+        }
+    </style>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Setup checkbox event handlers
-            const checkboxes = document.querySelectorAll('.notification-checkbox');
+            const checkboxes = document.querySelectorAll('.notification-checkbox.notification-select');
             checkboxes.forEach(checkbox => {
                 checkbox.addEventListener('change', function() {
-                    if (this.checked) {
-                        const notificationId = this.getAttribute('data-notification-id');
-                        markAsRead(notificationId);
+                    updateButtonState();
+                });
+            });
+            
+            // Setup select all functionality
+            const selectAllCheckbox = document.getElementById('select-all');
+            if (selectAllCheckbox) {
+                selectAllCheckbox.addEventListener('change', function() {
+                    const isChecked = this.checked;
+                    checkboxes.forEach(checkbox => {
+                        checkbox.checked = isChecked;
+                    });
+                    updateButtonState();
+                });
+            }
+            
+            // Mark selected as read button
+            const markSelectedReadBtn = document.getElementById('mark-selected-read');
+            if (markSelectedReadBtn) {
+                markSelectedReadBtn.addEventListener('click', function() {
+                    const selectedIds = getSelectedNotificationIds();
+                    if (selectedIds.length > 0) {
+                        if (confirm(`Are you sure you want to mark ${selectedIds.length} notification(s) as read?`)) {
+                            markMultipleAsRead(selectedIds);
+                        }
+                    } else {
+                        alert('Please select at least one notification');
                     }
+                });
+            }
+            
+            // Delete selected button
+            const deleteSelectedBtn = document.getElementById('delete-selected');
+            if (deleteSelectedBtn) {
+                deleteSelectedBtn.addEventListener('click', function() {
+                    const selectedIds = getSelectedNotificationIds();
+                    if (selectedIds.length > 0) {
+                        if (confirm(`Are you sure you want to delete ${selectedIds.length} notification(s)?`)) {
+                            deleteMultipleNotifications(selectedIds);
+                        }
+                    } else {
+                        alert('Please select at least one notification');
+                    }
+                });
+            }
+            
+            // Mark all read button
+            const markAllReadBtn = document.getElementById('mark-all-read');
+            if (markAllReadBtn) {
+                markAllReadBtn.addEventListener('click', function() {
+                    if (confirm('Are you sure you want to mark all notifications as read?')) {
+                        markAllAsRead();
+                    }
+                });
+            }
+            
+            // Delete all button
+            const deleteAllBtn = document.getElementById('delete-all');
+            if (deleteAllBtn) {
+                deleteAllBtn.addEventListener('click', function() {
+                    // First select all notifications
+                    const selectAllCheckbox = document.getElementById('select-all');
+                    if (selectAllCheckbox) {
+                        selectAllCheckbox.checked = true;
+                        
+                        // Trigger the change event to check all checkboxes
+                        const event = new Event('change');
+                        selectAllCheckbox.dispatchEvent(event);
+                        
+                        // Now get all notification IDs
+                        const allIds = getSelectedNotificationIds();
+                        
+                        if (allIds.length > 0) {
+                            if (confirm(`Are you sure you want to delete all ${allIds.length} notification(s)?`)) {
+                                deleteMultipleNotifications(allIds);
+                            }
+                        } else {
+                            alert('No notifications to delete');
+                        }
+                    }
+                });
+            }
+            
+            // Setup mark as read button event handlers
+            const markReadButtons = document.querySelectorAll('.mark-read-btn');
+            markReadButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const notificationId = this.getAttribute('data-notification-id');
+                    markAsRead(notificationId);
                 });
             });
             
@@ -93,42 +668,274 @@
             deleteButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     const notificationId = this.getAttribute('data-notification-id');
-                    deleteNotification(notificationId);
+                    if (confirm('Are you sure you want to delete this notification?')) {
+                        deleteNotification(notificationId);
+                    }
                 });
             });
-        });
-
-        function markAsRead(notificationId) {
-            fetch(`/notifications/mark_read/${notificationId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Add a fade-out effect before removing
-                    const row = document.getElementById(`notification-${notificationId}`);
-                    row.style.transition = "opacity 0.5s";
-                    row.style.opacity = 0;
-                    
-                    // Remove the row after fade effect
-                    setTimeout(() => {
-                        row.remove();
-                    }, 500);
-                } else {
-                    alert('Failed to mark notification as read.');
-                }
-            })
-            .catch(error => {
-                console.error('Error marking notification as read:', error);
-                alert('An error occurred while marking the notification as read.');
+            
+            // Setup search functionality
+            const searchInput = document.getElementById('searchNotifications');
+            if (searchInput) {
+                searchInput.addEventListener('input', filterNotifications);
+            }
+            
+            // Filter badges
+            document.getElementById('filter-all').addEventListener('click', function() {
+                setActiveFilter('all');
+                filterNotifications();
             });
-        }
-        
-        function deleteNotification(notificationId) {
-            if (confirm('Are you sure you want to delete this notification?')) {
+            
+            document.getElementById('filter-unread').addEventListener('click', function() {
+                setActiveFilter('unread');
+                filterNotifications();
+            });
+            
+            document.getElementById('filter-read').addEventListener('click', function() {
+                setActiveFilter('read');
+                filterNotifications();
+            });
+            
+            // Set "All" as the default active filter
+            setActiveFilter('all');
+            
+            function setActiveFilter(filter) {
+                document.getElementById('filter-all').classList.remove('active');
+                document.getElementById('filter-unread').classList.remove('active');
+                document.getElementById('filter-read').classList.remove('active');
+                document.getElementById(`filter-${filter}`).classList.add('active');
+                document.body.setAttribute('data-filter', filter);
+            }
+            
+            function filterNotifications() {
+                const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+                const currentFilter = document.body.getAttribute('data-filter') || 'all';
+                
+                const rows = document.querySelectorAll('#notificationsTable tbody tr');
+                
+                rows.forEach(row => {
+                    if (row.querySelector('.empty-state')) {
+                        return; // Skip the empty state row
+                    }
+                    
+                    const isRead = row.getAttribute('data-read') === 'true';
+                    const messageCell = row.querySelector('.notification-message');
+                    const message = messageCell ? messageCell.textContent.toLowerCase() : '';
+                    
+                    let filterMatch = true;
+                    if (currentFilter === 'read') {
+                        filterMatch = isRead;
+                    } else if (currentFilter === 'unread') {
+                        filterMatch = !isRead;
+                    }
+                    
+                    const searchMatch = searchTerm === '' || message.includes(searchTerm);
+                    
+                    row.style.display = filterMatch && searchMatch ? '' : 'none';
+                });
+                
+                updateEmptyState();
+            }
+            
+            function updateEmptyState() {
+                const visibleRows = document.querySelectorAll('#notificationsTable tbody tr:not([style*="display: none"])');
+                const emptyStateRow = document.querySelector('.empty-state')?.closest('tr');
+                
+                if (visibleRows.length === 0 && !emptyStateRow) {
+                    // Add empty state if no rows are visible
+                    const tbody = document.querySelector('#notificationsTable tbody');
+                    const emptyRow = document.createElement('tr');
+                    emptyRow.innerHTML = `
+                        <td colspan="3">
+                            <div class="empty-state">
+                                <i class="fas fa-search"></i>
+                                <h3>No matching notifications</h3>
+                                <p>Try changing your filters or search terms.</p>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(emptyRow);
+                } else if (visibleRows.length > 0 && emptyStateRow && !emptyStateRow.querySelector('.fas.fa-bell-slash')) {
+                    // Remove empty state if rows are visible
+                    emptyStateRow.remove();
+                }
+            }
+            
+            function getSelectedNotificationIds() {
+                const selectedCheckboxes = document.querySelectorAll('.notification-checkbox.notification-select:checked');
+                // Try to get ids from multiple attribute sources to ensure we get them
+                return Array.from(selectedCheckboxes).map(checkbox => {
+                    // First try the data attribute
+                    const idFromData = checkbox.getAttribute('data-notification-id');
+                    if (idFromData) return parseInt(idFromData);
+                    
+                    // Then try the value attribute
+                    const idFromValue = checkbox.value;
+                    if (idFromValue) return parseInt(idFromValue);
+                    
+                    // As a last resort, try to extract from parent row id
+                    const row = checkbox.closest('tr');
+                    if (row && row.id) {
+                        const match = row.id.match(/notification-(\d+)/);
+                        if (match && match[1]) return parseInt(match[1]);
+                    }
+                    
+                    return null;
+                }).filter(id => id !== null); // Filter out any null values
+            }
+            
+            function updateButtonState() {
+                const selectedCount = document.querySelectorAll('.notification-checkbox.notification-select:checked').length;
+                
+                if (markSelectedReadBtn) {
+                    markSelectedReadBtn.disabled = selectedCount === 0;
+                }
+                
+                if (deleteSelectedBtn) {
+                    deleteSelectedBtn.disabled = selectedCount === 0;
+                }
+            }
+            
+            function markAsRead(notificationId) {
+                fetch(`/notifications/mark_read/${notificationId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const row = document.getElementById(`notification-${notificationId}`);
+                        
+                        // Update row status
+                        row.setAttribute('data-read', 'true');
+                        
+                        // Update notification styling
+                        const messageCell = row.querySelector('.notification-message');
+                        messageCell.classList.remove('unread');
+                        
+                        // Remove mark as read button
+                        const markReadBtn = row.querySelector('.mark-read-btn');
+                        if (markReadBtn) {
+                            markReadBtn.remove();
+                        }
+                        
+                        // Apply visual feedback
+                        row.style.backgroundColor = '#e8f7f2';
+                        setTimeout(() => {
+                            row.style.backgroundColor = '';
+                        }, 1500);
+                    } else {
+                        alert('Failed to mark notification as read.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marking notification as read:', error);
+                    alert('An error occurred while marking the notification as read.');
+                });
+            }
+            
+            function markMultipleAsRead(notificationIds) {
+                const requestBody = { ids: notificationIds };
+                
+                fetch('/notifications/mark_multiple_read', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        notificationIds.forEach(id => {
+                            const row = document.getElementById(`notification-${id}`);
+                            if (row) {
+                                // Update row status
+                                row.setAttribute('data-read', 'true');
+                                
+                                // Update notification styling
+                                const messageCell = row.querySelector('.notification-message');
+                                messageCell.classList.remove('unread');
+                                
+                                // Remove mark as read button
+                                const markReadBtn = row.querySelector('.mark-read-btn');
+                                if (markReadBtn) {
+                                    markReadBtn.remove();
+                                }
+                                
+                                // Apply visual feedback
+                                row.style.backgroundColor = '#e8f7f2';
+                                setTimeout(() => {
+                                    row.style.backgroundColor = '';
+                                }, 1500);
+                            }
+                        });
+                        
+                        // Reset checkboxes
+                        document.getElementById('select-all').checked = false;
+                        document.querySelectorAll('.notification-checkbox.notification-select').forEach(checkbox => {
+                            checkbox.checked = false;
+                        });
+                        
+                        updateButtonState();
+                    } else {
+                        alert('Failed to mark notifications as read.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marking notifications as read:', error);
+                    alert('An error occurred while marking notifications as read.');
+                });
+            }
+            
+            function markAllAsRead() {
+                fetch('/notifications/mark_all_read', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.querySelectorAll('#notificationsTable tbody tr').forEach(row => {
+                            if (!row.querySelector('.empty-state')) {
+                                // Update row status
+                                row.setAttribute('data-read', 'true');
+                                
+                                // Update notification styling
+                                const messageCell = row.querySelector('.notification-message');
+                                messageCell.classList.remove('unread');
+                                
+                                // Remove mark as read button
+                                const markReadBtn = row.querySelector('.mark-read-btn');
+                                if (markReadBtn) {
+                                    markReadBtn.remove();
+                                }
+                            }
+                        });
+                        
+                        // Apply fade effect to mark-all-read button and then hide it
+                        if (markAllReadBtn) {
+                            markAllReadBtn.style.transition = 'opacity 0.5s';
+                            markAllReadBtn.style.opacity = '0';
+                            setTimeout(() => {
+                                markAllReadBtn.style.display = 'none';
+                            }, 500);
+                        }
+                    } else {
+                        alert('Failed to mark all notifications as read.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error marking all notifications as read:', error);
+                    alert('An error occurred while marking all notifications as read.');
+                });
+            }
+            
+            function deleteNotification(notificationId) {
                 fetch(`/notifications/delete/${notificationId}`, {
                     method: 'POST',
                     headers: {
@@ -146,6 +953,7 @@
                         // Remove the row after fade effect
                         setTimeout(() => {
                             row.remove();
+                            updateEmptyState();
                         }, 500);
                     } else {
                         alert('Failed to delete notification.');
@@ -156,11 +964,72 @@
                     alert('An error occurred while deleting the notification.');
                 });
             }
-        }
+            
+            function deleteMultipleNotifications(notificationIds) {
+                if (!notificationIds || notificationIds.length === 0) {
+                    console.error('No notification IDs provided for deletion');
+                    alert('No notifications selected for deletion');
+                    return;
+                }
+                
+                console.log('Deleting notifications with IDs:', notificationIds);
+                
+                const requestBody = { ids: notificationIds };
+                
+                fetch('/notifications/delete_multiple', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestBody)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Server responded with status ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        notificationIds.forEach(id => {
+                            const row = document.getElementById(`notification-${id}`);
+                            if (row) {
+                                // Add a fade-out effect before removing
+                                row.style.transition = "opacity 0.5s";
+                                row.style.opacity = 0;
+                                
+                                // Remove the row after fade effect
+                                setTimeout(() => {
+                                    row.remove();
+                                }, 500);
+                            } else {
+                                console.warn(`Could not find row for notification ID: ${id}`);
+                            }
+                        });
+                        
+                        // Reset checkboxes
+                        const selectAllCheckbox = document.getElementById('select-all');
+                        if (selectAllCheckbox) {
+                            selectAllCheckbox.checked = false;
+                        }
+                        
+                        setTimeout(() => {
+                            updateEmptyState();
+                            updateButtonState();
+                        }, 500);
+                    } else {
+                        alert('Failed to delete notifications.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting notifications:', error);
+                    alert('An error occurred while deleting notifications.');
+                });
+            }
+            
+            // Initialize button states
+            updateButtonState();
+        });
     </script>
-
-    <footer class="footer">
-        <p>&copy; SIX7ONE8 CODEZ 2025</p>
-    </footer>
 </body>
 </html>

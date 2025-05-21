@@ -3,115 +3,426 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard</title>
+    <title>TransDev - Dashboard</title>
     <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --accent-color: #f39c12;
+            --dark-color: #34495e;
+            --light-color: #ecf0f1;
+            --danger-color: #e74c3c;
+        }
+        
         body {
-            background-color: white;
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 0;
+            color: #333;
         }
-        a {
-            color: blue;
-            font-size: 18px;
-            text-decoration: underline;
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
         }
+        
+        .top-nav {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo i {
+            margin-right: 10px;
+            font-size: 1.8rem;
+        }
+        
+        .nav-links {
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            color: white;
+            margin-left: 20px;
+            text-decoration: none;
+            transition: color 0.3s;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-links a i {
+            margin-right: 5px;
+        }
+        
+        .nav-links a:hover {
+            color: var(--secondary-color);
+        }
+        
+        .welcome-header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+        
+        .welcome-header h1 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 500;
+        }
+        
+        .welcome-header p {
+            margin-top: 10px;
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .content-section {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .content-section h2 {
+            margin-top: 0;
+            color: var(--dark-color);
+            font-weight: 500;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .content-section h2 i {
+            margin-right: 10px;
+            color: var(--primary-color);
+        }
+        
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-bottom: 20px;
         }
+        
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            padding: 12px 15px;
             text-align: left;
+            border-bottom: 1px solid #ddd;
         }
+        
         th {
-            background-color: #f2f2f2;
-            font-weight: bold;
+            background-color: var(--dark-color);
+            color: white;
+            font-weight: 500;
         }
+        
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+        
         tr:hover {
             background-color: #f1f1f1;
         }
-        .content-section {
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px;
+        
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .status-scheduled {
+            background-color: #e8f4fd;
+            color: #2980b9;
+        }
+        
+        .status-completed {
+            background-color: #e8f8f3;
+            color: #27ae60;
+        }
+        
+        .status-cancelled {
+            background-color: #fde8e8;
+            color: #c0392b;
+        }
+        
+        .status-pending {
+            background-color: #fdf6e8;
+            color: #e67e22;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+        }
+        
+        .btn:hover {
+            background-color: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: #c0392b;
+        }
+        
+        .notification-badge {
+            background-color: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            padding: 3px 7px;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
+        
+        /* Mobile menu toggle */
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        /* Footer styles */
+        .footer {
+            background-color: rgba(26, 59, 93, 0.95);
+            color: #fff;
+            padding: 8px 15px;
+            font-size: 12px;
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding-bottom: 5px;
+        }
+        
+        .footer-section {
+            flex: 1;
+            min-width: 150px;
+            padding: 0 10px;
+        }
+        
+        .footer-section h3 {
+            margin-bottom: 5px;
+            font-weight: 500;
+            font-size: 13px;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 5px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 11px;
+        }
+        
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+                flex-direction: column;
+                position: absolute;
+                top: 60px;
+                left: 0;
+                right: 0;
+                background-color: var(--dark-color);
+                padding: 10px 0;
+                z-index: 100;
+            }
+            
+            .nav-links.active {
+                display: flex;
+            }
+            
+            .nav-links a {
+                margin: 10px 20px;
+            }
+            
+            .menu-toggle {
+                display: block;
+            }
+            
+            .footer-content {
+                flex-direction: column;
+            }
+            
+            .footer-section {
+                margin-bottom: 5px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>Welcome, {{ current_user.username }}!</h1>
-    <nav>
-        <ul>
+    <div class="top-nav">
+        <div class="logo">
+            <i class="fas fa-bus"></i>
+            TransDev Scheduler
+        </div>
+        <button class="menu-toggle" id="menuToggle">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="nav-links" id="navLinks">
             {% if current_user.username in ['admin1', 'admin2', 'admin3'] %}
-            <li><a href="/schedule">Edit Schedule</a></li>
-            <li><a href="/view_users">View All Users</a></li>
+            <a href="/schedule"><i class="fas fa-calendar-edit"></i> Edit Schedule</a>
+            <a href="/view_users"><i class="fas fa-users"></i> View Users</a>
             {% endif %}
-            <li><a href="/view_schedule">View Schedule</a></li>
-            <li><a href="/notifications">Notifications
+            <a href="/view_schedule"><i class="fas fa-calendar-alt"></i> View Schedule</a>
+            <a href="/spreadsheet_schedule"><i class="fas fa-table"></i> Excel View</a>
+            <a href="/notifications">
+                <i class="fas fa-bell"></i> Notifications
                 {% if current_user.notifications|selectattr('is_read', 'equalto', False)|list %}
-                <span style="color: red; font-weight: bold;">(New)</span>
+                <span class="notification-badge">New</span>
                 {% endif %}
-            </a></li>
-            <li><a href="/logout">Logout</a></li>
-        </ul>
-    </nav>
+            </a>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </div>
+    </div>
     
-    <div class="content-section">
-        <h2>Your Shifts</h2>
-        <table>
-            <tr>
-                <th>Assignment</th>
-                <th>Start Time</th>
-                <th>End Time</th>
-                <th>Status</th>
-            </tr>
-            {% for shift in current_user.shifts %}
-            <tr>
-                <td>{{ shift.assignment }}</td>
-                <td>{{ shift.start_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
-                <td>{{ shift.end_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
-                <td>{{ shift.status }}</td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
-
-    {% if current_user.username in ['admin1', 'admin2', 'admin3'] %}
-    <div class="content-section">
-        <h2>Manage Users</h2>
-        <table>
-            <tr>
-                <th>Username</th>
-                <th>Action</th>
-            </tr>
-            {% for user in users %}
-            <tr>
-                <td>{{ user.username }}</td>
-                <td>
-                    <form action="/remove_user/{{ user.id }}" method="POST" style="display:inline;">
-                        <button type="submit">Remove</button>
-                    </form>
-                </td>
-                {% if current_user.username == 'admin3' %}
-                <td>
-                    <form method="POST" action="/remove_user/{{ user.id }}">
-                        <button type="submit" style="background-color: red; color: white;">Delete</button>
-                    </form>
-                </td>
+    <div class="container">
+        <div class="welcome-header">
+            <h1>Welcome, {{ current_user.username }}!</h1>
+            <p>View your schedule and manage your training assignments</p>
+        </div>
+    
+        <div class="content-section">
+            <h2><i class="fas fa-clock"></i> Your Shifts</h2>
+            <table>
+                <tr>
+                    <th>Assignment</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Status</th>
+                </tr>
+                {% for shift in current_user.shifts %}
+                <tr>
+                    <td>{{ shift.assignment }}</td>
+                    <td>{{ shift.start_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                    <td>{{ shift.end_time.strftime('%m/%d/%Y %I:%M %p') }}</td>
+                    <td>
+                        <span class="status-badge status-{{ shift.status.lower() }}">
+                            {{ shift.status }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not current_user.shifts %}
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 20px;">No shifts assigned yet</td>
+                </tr>
                 {% endif %}
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
-    {% endif %}
+            </table>
+        </div>
 
+        {% if current_user.username in ['admin1', 'admin2', 'admin3'] %}
+        <div class="content-section">
+            <h2><i class="fas fa-user-cog"></i> Manage Users</h2>
+            <table>
+                <tr>
+                    <th>Username</th>
+                    <th>Actions</th>
+                    {% if current_user.username == 'admin3' %}
+                    <th>Admin Actions</th>
+                    {% endif %}
+                </tr>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.username }}</td>
+                    <td>
+                        <form action="/remove_user/{{ user.id }}" method="POST" style="display:inline;">
+                            <button type="submit" class="btn">
+                                <i class="fas fa-user-minus"></i> Remove
+                            </button>
+                        </form>
+                    </td>
+                    {% if current_user.username == 'admin3' %}
+                    <td>
+                        <form method="POST" action="/remove_user/{{ user.id }}">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </button>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+                {% if not users %}
+                <tr>
+                    <td colspan="3" style="text-align: center; padding: 20px;">No users found</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+        {% endif %}
+
+    </div>
+    
     <footer class="footer">
-        <p>&copy; SIX7ONE8 CODEZ 2025</p>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3><i class="fas fa-bus"></i> TransDev</h3>
+                <p style="margin: 0;">Excellence in transit training</p>
+            </div>
+            <div class="footer-section">
+                <p style="margin: 0;"><i class="fas fa-envelope"></i> SIX7ONE8@ICLOUD.COM | <i class="fas fa-phone"></i> 303-995-9851</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p style="margin: 0;">&copy; SIX7ONE8 CODEZ 2025</p>
+        </div>
     </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Mobile menu toggle
+            const menuToggle = document.getElementById('menuToggle');
+            const navLinks = document.getElementById('navLinks');
+            
+            if (menuToggle && navLinks) {
+                menuToggle.addEventListener('click', function() {
+                    navLinks.classList.toggle('active');
+                });
+            }
+        });
+    </script>
 </body>
 </html>

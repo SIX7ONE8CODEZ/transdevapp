@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TransDev - Spreadsheet Schedule</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/handsontable.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .spreadsheet-container {
+            width: 100%;
+            height: calc(100vh - 200px);
+            min-height: 500px;
+            margin: 20px 0;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+        
+        .spreadsheet-actions {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .btn-action {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-action:hover {
+            background-color: #2980b9;
+        }
+        
+        .btn-save {
+            background-color: #2ecc71;
+        }
+        
+        .btn-save:hover {
+            background-color: #27ae60;
+        }
+        
+        .notification {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        /* Admin-only controls */
+        .admin-controls {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+          .admin-controls h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+        
+        /* Styling for datetime cells */
+        .datetime-cell {
+            background-color: #f8f9fa;
+            position: relative;
+        }
+        
+        .datetime-cell::after {
+            content: "\f073"; /* Calendar icon */
+            font-family: "Font Awesome 5 Free";
+            font-weight: 900;
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <a href="{{ url_for('dashboard') }}">
+                    <span><i class="fas fa-bus"></i> TransDev Scheduler</span>
+                </a>
+            </div>
+            <ul class="nav-links">
+                <li><a href="{{ url_for('dashboard') }}"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="{{ url_for('view_schedule') }}"><i class="fas fa-calendar"></i> Calendar View</a></li>
+                <li class="active"><a href="{{ url_for('spreadsheet_schedule') }}"><i class="fas fa-table"></i> Spreadsheet View</a></li>
+                {% if current_user.username in ['admin1', 'admin2', 'admin3'] %}
+                <li><a href="{{ url_for('view_users') }}"><i class="fas fa-users"></i> Manage Users</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1><i class="fas fa-table"></i> Schedule Spreadsheet Editor</h1>
+        
+        <div id="notification" class="notification hidden"></div>
+        
+        {% if current_user.username in ['admin1', 'admin2', 'admin3'] %}
+        <div class="admin-controls">
+            <h3>Admin Controls</h3>
+            <div class="spreadsheet-actions">
+                <div>
+                    <button id="addRowBtn" class="btn-action"><i class="fas fa-plus"></i> Add Row</button>
+                    <button id="saveBtn" class="btn-action btn-save"><i class="fas fa-save"></i> Save Changes</button>
+                </div>
+                <div>
+                    <form action="{{ url_for('export_spreadsheet') }}" method="post">
+                        <button type="submit" class="btn-action"><i class="fas fa-file-export"></i> Export to Excel</button>
+                    </form>
+                    
+                    <form action="{{ url_for('import_spreadsheet') }}" method="post" enctype="multipart/form-data" style="display: inline-block;">
+                        <input type="file" name="excel_file" id="excelFile" style="display: none;" accept=".xlsx,.xls">
+                        <button type="button" onclick="document.getElementById('excelFile').click();" class="btn-action">
+                            <i class="fas fa-file-import"></i> Import Excel
+                        </button>
+                        <button type="submit" id="submitImport" style="display: none;">Import</button>
+                    </form>
+                    <script>
+                        document.getElementById('excelFile').addEventListener('change', function() {
+                            if (this.files.length > 0) {
+                                document.getElementById('submitImport').click();
+                            }
+                        });
+                    </script>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="spreadsheet-container" id="spreadsheet"></div>        {% if not current_user.username in ['admin1', 'admin2', 'admin3'] %}
+        <div class="spreadsheet-actions">
+            <div>
+                <p><i class="fas fa-info-circle"></i> Note: You are in view-only mode. Contact an administrator for changes or to export data.</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>    <script src="/static/js/handsontable.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="/static/js/datetime-sync.js"></script>
+    <script>
+        // Initialize flatpickr date pickers after the table is rendered
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(() => {
+                // Initialize date pickers on datetime cells
+                const dateInputs = document.querySelectorAll('.datetime-cell');
+                dateInputs.forEach(cell => {
+                    flatpickr(cell, {
+                        enableTime: true,
+                        dateFormat: "m/d/Y h:i K", // Format as month/day/year hour:minute AM/PM
+                        time_24hr: false,
+                        minuteIncrement: 15,
+                        allowInput: true,
+                        onClose: function(selectedDates, dateStr, instance) {
+                            // Trigger Handsontable to register the change
+                            const event = new Event('change');
+                            instance.element.dispatchEvent(event);
+                        }
+                    });
+                });
+            }, 500); // Slight delay to ensure table is fully rendered
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            // Element where the table will be rendered
+            const container = document.getElementById('spreadsheet');
+            
+            // Initialize data from server
+            let data = {{ shifts_data|safe }};
+            
+            // Format display data for readability
+            const formattedData = data.map(shift => {
+                return {
+                    id: shift.id,
+                    employee_name: shift.employee_name,
+                    assignment: shift.assignment,
+                    start_time: formatDateTime(shift.start_time),
+                    end_time: formatDateTime(shift.end_time),
+                    status: shift.status,
+                    participants: shift.participants
+                };
+            });
+              // Define column headers and settings
+            const columns = [
+                { data: 'id', title: 'ID', readOnly: true, width: 50 },
+                { data: 'employee_name', title: 'Employee', width: 120 },
+                { data: 'assignment', title: 'Assignment', width: 150 },
+                { 
+                    data: 'start_time', 
+                    title: 'Start Time', 
+                    width: 150, 
+                    type: 'date',
+                    dateFormat: 'MM/DD/YYYY h:mm A',
+                    correctFormat: true,
+                    defaultDate: new Date(),
+                    datePickerConfig: {
+                        firstDay: 0,
+                        showWeekNumber: true,
+                        numberOfMonths: 1,
+                        enableTime: true,
+                        time_24hr: false,
+                        minuteIncrement: 15
+                    }
+                },
+                { 
+                    data: 'end_time', 
+                    title: 'End Time', 
+                    width: 150,
+                    type: 'date',
+                    dateFormat: 'MM/DD/YYYY h:mm A',
+                    correctFormat: true,
+                    defaultDate: new Date(),
+                    datePickerConfig: {
+                        firstDay: 0,
+                        showWeekNumber: true,
+                        numberOfMonths: 1,
+                        enableTime: true,
+                        time_24hr: false,
+                        minuteIncrement: 15
+                    }
+                },
+                { data: 'status', title: 'Status', type: 'dropdown', source: ['Scheduled', 'Swap Requested', 'Approved'], width: 120 },
+                { data: 'participants', title: 'Participants', width: 200 }
+            ];
+            
+            // Initialize Handsontable            const hot = new Handsontable(container, {
+                data: formattedData,
+                columns: columns,
+                rowHeaders: true,
+                colHeaders: columns.map(col => col.title),
+                licenseKey: 'non-commercial-and-evaluation', // for non-commercial use
+                stretchH: 'all',
+                autoWrapRow: true,
+                height: '100%',
+                width: '100%',
+                manualColumnResize: true,
+                contextMenu: {% if current_user.username in ['admin1', 'admin2', 'admin3'] %} true {% else %} false {% endif %},
+                readOnly: {% if current_user.username in ['admin1', 'admin2', 'admin3'] %} false {% else %} true {% endif %},
+                filters: true,
+                dropdownMenu: true,
+                beforeChange: function(changes, source) {
+                    // Auto-adjust end time when start time is changed
+                    if (source === 'edit') {
+                        for (let i = 0; i < changes.length; i++) {
+                            const [row, prop, oldValue, newValue] = changes[i];
+                            
+                            // When start_time changes, automatically update end_time to be 1 hour later
+                            if (prop === 'start_time' && newValue !== oldValue) {                                try {
+                                    // Parse the new start time
+                                    let startDate;
+                                    if (newValue instanceof Date) {
+                                        startDate = newValue;
+                                    } else {
+                                        startDate = parseDateTime(newValue);
+                                    }
+                                    
+                                    if (startDate && !isNaN(startDate.getTime())) {
+                                        // Get the current end time and calculate duration
+                                        const currentEndTimeStr = hot.getDataAtRowProp(row, 'end_time');
+                                        const currentEndTime = parseDateTime(currentEndTimeStr);
+                                        const oldStartTime = parseDateTime(oldValue);
+                                        
+                                        // Default duration (1 hour in milliseconds)
+                                        let duration = 3600000;
+                                        
+                                        // If we have both valid end and start times, calculate the original duration
+                                        if (currentEndTime && oldStartTime && 
+                                            currentEndTime > oldStartTime) {
+                                            duration = currentEndTime.getTime() - oldStartTime.getTime();
+                                        }
+                                        
+                                        // Apply the duration to calculate new end time
+                                        const newEndTime = new Date(startDate.getTime() + duration);
+                                        
+                                        // Format for display
+                                        const formattedEndDate = formatDateTime(newEndTime);
+                                        
+                                        // Show notification about the auto-adjustment
+                                        showNotification(`End time auto-adjusted to maintain ${Math.round(duration/3600000)} hour(s) duration`, 'info');
+                                        
+                                        // Update the end time in the table
+                                        setTimeout(() => {
+                                            hot.setDataAtRowProp(row, 'end_time', formattedEndDate);
+                                        }, 10);
+                                    }
+                                } catch (e) {
+                                    console.error("Error auto-adjusting end time:", e);
+                                }
+                            }
+                        }
+                    }
+                    return true; // Allow the edit
+                },
+                afterChange: function(changes, source) {
+                    if (source === 'edit') {
+                        showNotification('Changes made. Click "Save Changes" to persist.', 'info');
+                    }
+                }
+            });
+              // Add event listeners for admin controls
+            {% if current_user.username in ['admin1', 'admin2', 'admin3'] %}
+            document.getElementById('addRowBtn').addEventListener('click', function() {
+                const now = new Date();
+                // Set end time to 1 hour after start time by default
+                const oneHourLater = new Date(now.getTime() + 3600000);
+                
+                const newRow = {
+                    id: 'new_' + Date.now(),
+                    employee_name: '',
+                    assignment: '',
+                    start_time: formatDateTime(now),
+                    end_time: formatDateTime(oneHourLater),
+                    status: 'Scheduled',
+                    participants: ''
+                };
+                hot.alter('insert_row', hot.countRows());
+                hot.setDataAtRowProp(hot.countRows() - 1, newRow);
+                showNotification('New row added. Remember to save your changes.', 'success');
+            });
+            
+            document.getElementById('saveBtn').addEventListener('click', function() {
+                const modifiedData = hot.getData();
+                const updatedData = modifiedData.map((row, index) => {
+                    return {
+                        id: hot.getDataAtRowProp(index, 'id'),
+                        employee_name: hot.getDataAtRowProp(index, 'employee_name'),
+                        assignment: hot.getDataAtRowProp(index, 'assignment'),
+                        start_time: hot.getDataAtRowProp(index, 'start_time'),
+                        end_time: hot.getDataAtRowProp(index, 'end_time'),
+                        status: hot.getDataAtRowProp(index, 'status'),
+                        participants: hot.getDataAtRowProp(index, 'participants')
+                    };
+                });
+                
+                // Send data to server
+                fetch('{{ url_for("update_spreadsheet") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ shifts: updatedData })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showNotification('Changes saved successfully!', 'success');
+                        // Refresh data after save if needed
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        showNotification('Error: ' + data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    showNotification('Error saving data: ' + error, 'error');
+                });
+            });
+            {% endif %}
+            
+            // Helper functions
+            function formatDateTime(dateStr) {
+                if (!dateStr) return '';
+                const date = new Date(dateStr);
+                if (isNaN(date)) return dateStr; // return original if invalid
+                
+                return date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            }
+            
+            function parseDateTime(dateStr) {
+                if (!dateStr) return null;
+                
+                // Try different formats
+                const formats = [
+                    // ISO format
+                    str => new Date(str),
+                    // US format with AM/PM
+                    str => {
+                        const parts = str.match(/(\d{2})\/(\d{2})\/(\d{4}) (\d{1,2}):(\d{2}) ([AP]M)/i);
+                        if (parts) {
+                            let hour = parseInt(parts[4]);
+                            const minute = parseInt(parts[5]);
+                            const ampm = parts[6].toUpperCase();
+                            if (ampm === "PM" && hour < 12) hour += 12;
+                            if (ampm === "AM" && hour === 12) hour = 0;
+                            return new Date(parts[3], parts[1] - 1, parts[2], hour, minute);
+                        }
+                        return null;
+                    }
+                ];
+                
+                for (const formatFn of formats) {
+                    try {
+                        const date = formatFn(dateStr);
+                        if (date && !isNaN(date.getTime())) {
+                            return date;
+                        }
+                    } catch (e) {
+                        // Just try the next format
+                    }
+                }
+                
+                return null;
+            }
+            
+            function showNotification(message, type) {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.className = 'notification ' + type;
+                notification.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    notification.classList.add('hidden');
+                }, 5000);
+            }
+            
+            // Initialize notification if needed
+            {% if message %}
+            showNotification('{{ message }}', '{{ message_type }}');
+            {% endif %}
+        });
+    </script>
+</body>
+</html>
