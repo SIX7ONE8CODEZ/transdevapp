@@ -123,14 +123,23 @@
         </div>
     </nav>
 
-    <div class="container">
-        <h1><i class="fas fa-table"></i> Schedule Spreadsheet Editor</h1>
+    <div class="container">        <h1><i class="fas fa-table"></i> Schedule Spreadsheet Editor</h1>
         
         <div id="notification" class="notification hidden"></div>
+        
+        {% if message %}
+        <div class="notification {{ message_type }}">
+            <i class="fas fa-info-circle"></i> {{ message }}
+        </div>
+        {% endif %}
         
         {% if current_user.username in ['admin1', 'admin2', 'admin3'] %}
         <div class="admin-controls">
             <h3>Admin Controls</h3>
+            <p style="margin-bottom: 15px;">
+                As an admin user, you can add, edit, and manage the schedule. Use the Export button to download the schedule as an Excel file. 
+                Use the Import button to upload a properly formatted Excel file. Download the template for the correct format.
+            </p>
             <div class="spreadsheet-actions">
                 <div>
                     <button id="addRowBtn" class="btn-action"><i class="fas fa-plus"></i> Add Row</button>
@@ -142,10 +151,12 @@
                     </form>
                     
                     <form action="{{ url_for('import_spreadsheet') }}" method="post" enctype="multipart/form-data" style="display: inline-block;">
-                        <input type="file" name="excel_file" id="excelFile" style="display: none;" accept=".xlsx,.xls">
-                        <button type="button" onclick="document.getElementById('excelFile').click();" class="btn-action">
+                        <input type="file" name="excel_file" id="excelFile" style="display: none;" accept=".xlsx,.xls">                        <button type="button" onclick="document.getElementById('excelFile').click();" class="btn-action">
                             <i class="fas fa-file-import"></i> Import Excel
                         </button>
+                        <a href="/static/schedule_template.xlsx" class="btn-action" style="text-decoration: none; display: inline-block; background-color: #34495e;">
+                            <i class="fas fa-download"></i> Download Template
+                        </a>
                         <button type="submit" id="submitImport" style="display: none;">Import</button>
                     </form>
                     <script>

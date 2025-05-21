@@ -1,4 +1,3 @@
-from flask import Flask, render_template, redirect, url_for, request, jsonify, send_from_directory
 from flask import Flask, render_template, redirect, url_for, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
@@ -7,13 +6,16 @@ from database import db, User, Shift, Notification
 from datetime import datetime
 from dotenv import load_dotenv
 import os
+<<<<<<< HEAD
 import io
 from flask_mail import Mail
 import pandas as pd  # For Excel handling
 from werkzeug.utils import secure_filename  # For secure file handling
 import json  # For JSON handling in spreadsheet
 import io  # For handling BytesIO objects
+=======
 from flask_mail import Mail
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 
 # Load environment variables from .env file
 load_dotenv()
@@ -51,8 +53,6 @@ with app.app_context():
     db.session.commit()
 
 login_manager = LoginManager(app)
-login_manager.login_view = 'login'
-login_manager.login_message = 'Please log in to access this page.'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -98,8 +98,12 @@ def register():
 @login_required
 def dashboard():
     print(f"Accessing dashboard for user: {current_user.username}")
+<<<<<<< HEAD
     # Get shifts sorted by start_time
     user_shifts = Shift.query.filter_by(employee_id=current_user.id).order_by(Shift.start_time).all()
+=======
+    user_shifts = Shift.query.filter_by(employee_id=current_user.id).all()
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
     print(f"Shifts retrieved for user {current_user.username}: {user_shifts}")
     return render_template('dashboard.html', shifts=user_shifts)
 
@@ -139,8 +143,14 @@ def schedule():
             db.session.add(notification)
         db.session.commit()
 
-        return redirect(url_for('schedule'))    # Get shifts sorted by start_time
+        return redirect(url_for('schedule'))
+
+<<<<<<< HEAD
+    # Get shifts sorted by start_time
     shifts = Shift.query.order_by(Shift.start_time).all()
+=======
+    shifts = Shift.query.all()
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
     employees = User.query.all()
     return render_template('schedule.html', shifts=shifts, employees=employees)
 
@@ -148,11 +158,17 @@ def schedule():
 @login_required
 def view_schedule():
     if current_user.username in ['admin1', 'admin2', 'admin3']:
+<<<<<<< HEAD
         # Sort by start_time for admin users who can see all shifts
         user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == User.id).order_by(Shift.start_time).all()
     else:
         # Sort by start_time for regular users who see only their shifts
         user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == current_user.id).order_by(Shift.start_time).all()
+=======
+        user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == User.id).all()
+    else:
+        user_shifts = db.session.query(Shift, User).join(User, Shift.employee_id == current_user.id).all()
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 
     shifts_with_employee = [
         {
@@ -168,6 +184,7 @@ def view_schedule():
         }
         for shift, user in user_shifts
     ]
+<<<<<<< HEAD
     # Get flash messages if any
     import_message = request.args.get('import_message')
     import_error = request.args.get('import_error', False) == 'True'
@@ -269,7 +286,9 @@ def import_schedule():
     except Exception as e:
         # Return error message
         return redirect(url_for('view_schedule', import_message=f'Error processing file: {str(e)}', import_error=True))
+=======
     return render_template('view_schedule.html', shifts=shifts_with_employee)
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 
 @app.route('/api/schedule')
 @login_required
@@ -286,6 +305,7 @@ def api_schedule():
     ]
     return jsonify(events)
 
+<<<<<<< HEAD
 @app.route('/download_template')
 @login_required
 def download_template():
@@ -296,6 +316,8 @@ def download_template():
     # Return the template file
     return send_from_directory(os.path.join(app.root_path, 'static'), 'schedule_template.xlsx')
 
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 @app.route('/notifications')
 @login_required
 def notifications():
@@ -322,6 +344,7 @@ def delete_notification(notification_id):
         return jsonify({'success': True}), 200
     return jsonify({'error': 'Notification not found'}), 404
 
+<<<<<<< HEAD
 @app.route('/notifications/mark_multiple_read', methods=['POST'])
 @login_required
 def mark_multiple_read():
@@ -378,6 +401,8 @@ def delete_multiple_notifications():
     db.session.commit()
     return jsonify({'success': True, 'count': deleted_count}), 200
 
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 @app.route('/update_students', methods=['POST'])
 @login_required
 def update_students():
@@ -434,36 +459,22 @@ def view_users():
     return render_template('view_users.html', users=users)
 
 @app.route('/logout')
+<<<<<<< HEAD
+=======
 @login_required
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 def logout():
     logout_user()
     return redirect(url_for('login'))
 
+<<<<<<< HEAD
 # Helper function to parse datetime from various formats
 def parse_datetime(datetime_str):
     if not datetime_str:
         return None
         
     if not isinstance(datetime_str, str):
-        if isinstance(datetime_str, datetime):
-            return datetime_str  # Already a datetime object
-        elif pd.isna(datetime_str):
-            return None
-        try:
-            # Try converting pandas timestamp or numeric value
-            return pd.to_datetime(datetime_str)
-        except:
-            print(f"Cannot convert non-string datetime value: {datetime_str}")
-            return None
-    
-    # Clean the string
-    datetime_str = datetime_str.strip()
-    
-    # Try pandas to_datetime which handles many formats
-    try:
-        return pd.to_datetime(datetime_str)
-    except:
-        pass
+        return datetime_str  # Already a datetime object
         
     # Try different date formats
     formats = [
@@ -481,8 +492,6 @@ def parse_datetime(datetime_str):
         lambda s: datetime.strptime(s, '%m/%d/%Y %I:%M:%S %p'),
         # Try EU format
         lambda s: datetime.strptime(s, '%d/%m/%Y %H:%M'),
-        # Excel format
-        lambda s: datetime.strptime(s, '%Y-%m-%d %H:%M:%S'),
     ]
     
     for format_func in formats:
@@ -508,6 +517,8 @@ def calculate_duration(start_time, end_time):
         
     return end_time - start_time
 
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 @app.route('/update_schedule', methods=['POST'])
 @login_required
 def update_schedule():
@@ -524,10 +535,13 @@ def update_schedule():
     
     if shift:
         print(f"Original assignment: {shift.assignment}")
+<<<<<<< HEAD
         # Store original times for comparison
         original_start_time = shift.start_time
         original_end_time = shift.end_time
         original_duration = original_end_time - original_start_time
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
         
         # Update assignment field - directly set it
         if new_assignment is not None:
@@ -536,22 +550,32 @@ def update_schedule():
         
         # Process start time
         new_start_time = request.form.get('start_time')
+<<<<<<< HEAD
         start_time_updated = False
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
         if new_start_time and new_start_time.strip():
             try:
                 start_time = datetime.strptime(new_start_time, '%Y-%m-%dT%H:%M')
                 shift.start_time = start_time
+<<<<<<< HEAD
                 start_time_updated = True
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
             except (ValueError, TypeError) as e:
                 print(f"Error parsing start_time: {e}")
         
         # Process end time
         new_end_time = request.form.get('end_time')
+<<<<<<< HEAD
         end_time_updated = False
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
         if new_end_time and new_end_time.strip():
             try:
                 end_time = datetime.strptime(new_end_time, '%Y-%m-%dT%H:%M')
                 shift.end_time = end_time
+<<<<<<< HEAD
                 end_time_updated = True
             except (ValueError, TypeError) as e:
                 print(f"Error parsing end_time: {e}")
@@ -569,6 +593,11 @@ def update_schedule():
             shift.end_time = shift.start_time + timedelta(hours=1)
             print("Corrected end_time to be 1 hour after start_time")
         
+=======
+            except (ValueError, TypeError) as e:
+                print(f"Error parsing end_time: {e}")
+        
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
         # Explicitly commit the changes
         db.session.commit()
         print("Database changes committed")
@@ -587,6 +616,7 @@ def update_schedule():
     
     return redirect(url_for('schedule'))
 
+<<<<<<< HEAD
 @app.route('/spreadsheet_schedule')
 @login_required
 def spreadsheet_schedule():
@@ -816,11 +846,6 @@ def export_spreadsheet():
                                message=f'Error exporting schedule: {str(e)}',
                                message_type='error'))
 
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    """Serve static files"""
-    return send_from_directory('static', filename)
-
 @app.route('/import_spreadsheet', methods=['POST'])
 @login_required
 def import_spreadsheet():
@@ -851,36 +876,13 @@ def import_spreadsheet():
                                   message='Invalid file format. Please upload an Excel file (.xlsx or .xls)',
                                   message_type='error'))
         
-        # Save the uploaded file temporarily for debugging
-        import tempfile
-        temp_path = os.path.join(tempfile.gettempdir(), secure_filename(file.filename))
-        file.save(temp_path)
-        print(f"Saved uploaded file to {temp_path}")
-          # Read Excel file
-        print(f"Reading Excel file: {file.filename}")
+        # Read Excel file
+        df = pd.read_excel(file)
         
-        try:
-            # Try to read with pandas directly
-            df = pd.read_excel(temp_path)
-        except Exception as e:
-            print(f"Error reading Excel file directly: {e}")
-            # Try with openpyxl engine
-            try:
-                df = pd.read_excel(temp_path, engine='openpyxl')
-            except Exception as e2:
-                print(f"Error reading with openpyxl: {e2}")
-                return redirect(url_for('spreadsheet_schedule', 
-                                  message=f'Error reading Excel file. Please check the format: {str(e2)}',
-                                  message_type='error'))
-        
-        print(f"Excel data read successfully with {len(df)} rows")
-        print(f"Columns: {df.columns.tolist()}")
-          # Validate required columns
+        # Validate required columns
         required_columns = ['Employee', 'Assignment', 'Start Time', 'End Time', 'Status']
         missing_columns = [col for col in required_columns if col not in df.columns]
         if missing_columns:
-            print(f"Missing columns: {missing_columns}")
-            print(f"Available columns: {df.columns.tolist()}")
             return redirect(url_for('spreadsheet_schedule', 
                                   message=f'Missing required columns: {", ".join(missing_columns)}',
                                   message_type='error'))
@@ -889,43 +891,25 @@ def import_spreadsheet():
         success_count = 0
         error_count = 0
         
-        for idx, row in df.iterrows():
+        for _, row in df.iterrows():
             try:
-                print(f"Processing row {idx}: {row['Employee']} - {row['Assignment']}")
                 # Get employee
-                employee_name = str(row['Employee'])
+                employee_name = row['Employee']
                 employee = User.query.filter_by(username=employee_name).first()
-                
-                if not employee:
-                    print(f"Employee not found: {employee_name}")
-                    error_count += 1
-                    continue
-                
-                employee_id = employee.id
+                employee_id = employee.id if employee else None
                 
                 # Parse dates
                 try:
-                    # Handle different date formats
-                    start_time_str = str(row['Start Time'])
-                    end_time_str = str(row['End Time'])
-                    
-                    start_time = parse_datetime(start_time_str)
-                    end_time = parse_datetime(end_time_str)
-                    
-                    if not start_time or not end_time:
-                        print(f"Could not parse dates: {start_time_str} - {end_time_str}")
-                        error_count += 1
-                        continue
-                        
-                    print(f"Parsed dates: {start_time} - {end_time}")
-                except Exception as e:
-                    print(f"Date parsing error: {e}")
+                    start_time = pd.to_datetime(row['Start Time'])
+                    end_time = pd.to_datetime(row['End Time'])
+                except:
+                    # Skip rows with invalid dates
                     error_count += 1
                     continue
                 
                 # Get other fields
-                assignment = str(row['Assignment'])
-                status = str(row['Status'])
+                assignment = row['Assignment']
+                status = row['Status']
                 participants = str(row.get('Participants', ''))
                 
                 # Check if updating existing shift (if ID column exists)
@@ -934,13 +918,13 @@ def import_spreadsheet():
                     shift = Shift.query.get(int(shift_id))
                     if shift:
                         # Update existing shift
-                        shift.employee_id = employee_id
+                        if employee_id:
+                            shift.employee_id = employee_id
                         shift.assignment = assignment
                         shift.start_time = start_time
                         shift.end_time = end_time
                         shift.status = status
                         shift.students = participants
-                        print(f"Updated shift ID {shift_id}")
                     else:
                         # Create new shift if ID not found
                         new_shift = Shift(
@@ -952,8 +936,8 @@ def import_spreadsheet():
                             students=participants
                         )
                         db.session.add(new_shift)
-                        print(f"Created new shift (ID not found: {shift_id})")
-                else:                    # Create new shift
+                else:
+                    # Create new shift
                     new_shift = Shift(
                         employee_id=employee_id,
                         assignment=assignment,
@@ -963,28 +947,13 @@ def import_spreadsheet():
                         students=participants
                     )
                     db.session.add(new_shift)
-                    print(f"Created new shift for {employee_name}")
                 
                 success_count += 1
             except Exception as e:
                 print(f"Error processing row: {e}")
                 error_count += 1
         
-        # Commit changes and clean up
-        try:
-            db.session.commit()
-            print(f"Database committed: {success_count} successful, {error_count} errors")
-            
-            # Remove the temporary file
-            if os.path.exists(temp_path):
-                os.remove(temp_path)
-                print(f"Temporary file {temp_path} removed")
-        except Exception as e:
-            print(f"Error during commit: {e}")
-            db.session.rollback()
-            return redirect(url_for('spreadsheet_schedule', 
-                                  message=f'Error saving changes: {str(e)}',
-                                  message_type='error'))
+        db.session.commit()
         
         message = f'Import completed: {success_count} shifts processed successfully'
         if error_count > 0:
@@ -995,11 +964,12 @@ def import_spreadsheet():
                               message_type='success' if error_count == 0 else 'warning'))
     
     except Exception as e:
-        print(f"Exception in import_spreadsheet: {e}")
         return redirect(url_for('spreadsheet_schedule', 
                               message=f'Error importing schedule: {str(e)}',
                               message_type='error'))
 
+=======
+>>>>>>> cb2a70af676049d9267e1c077be2d6c58554215c
 if __name__ == '__main__':
     app.run(debug=True)
 
